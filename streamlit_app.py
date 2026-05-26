@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 import io
-import os
 import re
 import zipfile
 import unicodedata
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple, Optional
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-APP_TITLE = "Scouting Hub v0.3"
+APP_TITLE = "Scouting Hub v0.3.3"
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -69,7 +67,6 @@ def now_str() -> str:
 
 
 def normalize_text(value: object) -> str:
-    """Normalize names to detect duplicates: lowercase, no accents, no punctuation noise."""
     if value is None:
         return ""
     text = str(value).strip().lower()
@@ -94,7 +91,10 @@ def load_table(table: str) -> pd.DataFrame:
         df = empty_df(table)
         df.to_csv(path, index=False)
         return df
-    df = pd.read_csv(path, dtype=str).fillna("")
+    try:
+        df = pd.read_csv(path, dtype=str).fillna("")
+    except pd.errors.EmptyDataError:
+        df = empty_df(table)
     for col in SCHEMAS[table]:
         if col not in df.columns:
             df[col] = ""
@@ -134,22 +134,25 @@ def ensure_seed_data() -> None:
         rows = []
         for idx, name in enumerate(SEED_COUNTRIES, 1):
             rows.append({"country_id": f"CTY{idx:04d}", "name": name, "normalized_name": normalize_text(name), "created_at": now_str()})
-        countries = pd.DataFrame(rows, columns=SCHEMAS["countries"])
-        save_table("countries", countries)
+        save_table("countries", pd.DataFrame(rows, columns=SCHEMAS["countries"]))
 
     countries = load_table("countries")
     competitions = load_table("competitions")
     if competitions.empty:
         rows = []
         for idx, (country_name, comp_name, level, season) in enumerate(SEED_COMPETITIONS, 1):
-            country_id = countries.loc[countries["normalized_name"] == normalize_text(country_name), "country_id"]
-            country_id = country_id.iloc[0] if not country_id.empty else ""
+            country_id_series = countries.loc[countries["normalized_name"] == normalize_text(country_name), "country_id"]
+            country_id = country_id_series.iloc[0] if not country_id_series.empty else ""
             rows.append({
-                "competition_id": f"CMP{idx:04d}", "name": comp_name, "normalized_name": normalize_text(comp_name),
-                "country_id": country_id, "level": level, "season": season, "created_at": now_str()
+                "competition_id": f"CMP{idx:04d}",
+                "name": comp_name,
+                "normalized_name": normalize_text(comp_name),
+                "country_id": country_id,
+                "level": level,
+                "season": season,
+                "created_at": now_str(),
             })
-        competitions = pd.DataFrame(rows, columns=SCHEMAS["competitions"])
-        save_table("competitions", competitions)
+        save_table("competitions", pd.DataFrame(rows, columns=SCHEMAS["competitions"]))
 
 
 def add_country(name: str) -> Tuple[str, bool, str]:
@@ -237,7 +240,9 @@ def add_player(display_name: str, **kwargs) -> Tuple[str, bool, str]:
 def add_match(match_date: str, match_name: str, competition_id: str, home_team_id: str, away_team_id: str, season: str, context: str) -> Tuple[str, bool, str]:
     df = load_table("matches")
     norm_key = normalize_text(f"{match_date} {match_name}")
-    existing = df[df.apply(lambda r: normalize_text(f"{r.get('match_date','')} {r.get('match_name','')}") == norm_key, axis=1)]
+    if not match_name.strip():
+        return "", False, "Falta nombre del partido."
+    existing = df[df.apply(lambda r: normalize_text(f"{r.get('match_date','')} {r.get('match_name','')}") == norm_key, axis=1)] if not df.empty else pd.DataFrame()
     if not existing.empty:
         return existing.iloc[0]["match_id"], False, f"Ya existía el partido: {existing.iloc[0]['match_name']}"
     new_id = next_id(df, "MAT", "match_id")
@@ -248,9 +253,7 @@ def add_match(match_date: str, match_name: str, competition_id: str, home_team_i
 
 def add_observation(**kwargs) -> Tuple[str, bool, str]:
     df = load_table("observations")
-    player_id = kwargs.get("player_id", "")
-    match_id = kwargs.get("match_id", "")
-    if not player_id:
+    if not kwargs.get("player_id", ""):
         return "", False, "Falta jugador."
     new_id = next_id(df, "OBS", "observation_id")
     row = {col: kwargs.get(col, "") for col in SCHEMAS["observations"]}
@@ -277,8 +280,7 @@ def make_zip_bytes() -> bytes:
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zf:
         for table in SCHEMAS:
-            csv_bytes = dataframe_download_csv(load_table(table))
-            zf.writestr(f"{table}.csv", csv_bytes)
+            zf.writestr(f"{table}.csv", dataframe_download_csv(load_table(table)))
         zf.writestr("scouting_hub_backup.xlsx", make_excel_bytes())
     return output.getvalue()
 
@@ -312,7 +314,7 @@ def country_select(label: str, key: str, allow_add: bool = True) -> str:
         with st.expander("+ Añadir país", expanded=False):
             new_country = st.text_input("Nombre del país", key=f"{key}_new_country")
             if st.button("Guardar país", key=f"{key}_save_country"):
-                cid, created, msg = add_country(new_country)
+                _, created, msg = add_country(new_country)
                 st.success(msg) if created else st.info(msg)
                 st.rerun()
     return selected
@@ -334,7 +336,7 @@ def competition_select(label: str, country_id: str, key: str, allow_add: bool = 
             new_level = c2.text_input("Nivel", key=f"{key}_new_level", placeholder="1ª, 2ª, Sub-21...")
             new_season = c3.text_input("Temporada", key=f"{key}_new_season", placeholder="2025/26")
             if st.button("Guardar competición", key=f"{key}_save_comp"):
-                cid, created, msg = add_competition(new_name, country_id, new_level, new_season)
+                _, created, msg = add_competition(new_name, country_id, new_level, new_season)
                 st.success(msg) if created else st.info(msg)
                 st.rerun()
     return selected
@@ -357,7 +359,7 @@ def team_select(label: str, team_type: str, country_id: str, competition_id: str
         with st.expander("+ Añadir equipo/selección", expanded=False):
             new_team = st.text_input("Nombre", key=f"{key}_new_team")
             if st.button("Guardar equipo/selección", key=f"{key}_save_team"):
-                tid, created, msg = add_team(new_team, team_type, country_id, competition_id if team_type == "Club" else "")
+                _, created, msg = add_team(new_team, team_type, country_id, competition_id if team_type == "Club" else "")
                 st.success(msg) if created else st.info(msg)
                 st.rerun()
     return selected
@@ -385,9 +387,10 @@ def show_duplicate_warning(name: str) -> Optional[str]:
         player = exact.iloc[0]
         st.warning(f"Posible duplicado exacto: ya existe **{player['display_name']}**.")
         return player["player_id"]
-    partial = players[players["normalized_name"].str.contains(re.escape(norm), na=False) | players["display_name"].str.lower().str.contains(str(name).lower(), na=False)]
-    if not partial.empty and len(norm) >= 4:
-        st.info("Jugadores parecidos encontrados: " + ", ".join(partial["display_name"].head(5).tolist()))
+    if len(norm) >= 4 and not players.empty:
+        partial = players[players["normalized_name"].str.contains(re.escape(norm), na=False) | players["display_name"].str.lower().str.contains(str(name).lower(), na=False)]
+        if not partial.empty:
+            st.info("Jugadores parecidos encontrados: " + ", ".join(partial["display_name"].head(5).tolist()))
     if not aliases.empty:
         alias_match = aliases[aliases["normalized_alias"] == norm]
         if not alias_match.empty:
@@ -433,51 +436,82 @@ def enrich_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFr
 
 
 def draw_pitch(players_df: pd.DataFrame) -> None:
+    """Campograma sin matplotlib: HTML/CSS puro para evitar dependencias."""
     pos_xy = {
-        "POR": (5, 50), "LD": (22, 82), "DFC": (22, 50), "LI": (22, 18),
-        "CAD": (48, 88), "CAI": (48, 12), "MCD": (42, 50), "MC": (55, 50),
-        "MP": (70, 50), "ED": (78, 82), "EI": (78, 18), "SD": (84, 58), "DC": (92, 50),
+        "POR": (7, 50), "LD": (24, 78), "DFC": (24, 50), "LI": (24, 22),
+        "CAD": (46, 84), "CAI": (46, 16), "MCD": (43, 50), "MC": (56, 50),
+        "MP": (70, 50), "ED": (78, 78), "EI": (78, 22), "SD": (84, 58), "DC": (91, 50),
     }
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    ax.axis("off")
-    # pitch outline
-    ax.plot([0, 100, 100, 0, 0], [0, 0, 100, 100, 0])
-    ax.plot([50, 50], [0, 100])
-    circle = plt.Circle((50, 50), 9.15, fill=False)
-    ax.add_artist(circle)
-    ax.plot([0, 16.5, 16.5, 0], [21, 21, 79, 79])
-    ax.plot([100, 83.5, 83.5, 100], [21, 21, 79, 79])
     counts = players_df["primary_position"].value_counts().to_dict() if not players_df.empty else {}
+    markers = []
     for pos, (x, y) in pos_xy.items():
-        count = counts.get(pos, 0)
-        if count:
-            ax.scatter([x], [y], s=320 + count * 80)
-            ax.text(x, y, f"{pos}\n{count}", ha="center", va="center", fontsize=10)
-        else:
-            ax.text(x, y, pos, ha="center", va="center", fontsize=8, alpha=0.35)
-    st.pyplot(fig, clear_figure=True)
+        count = int(counts.get(pos, 0))
+        opacity = "1" if count else "0.35"
+        size = min(70, 38 + count * 6) if count else 34
+        label = f"{pos}<br><b>{count}</b>" if count else pos
+        markers.append(
+            f'<div class="marker" style="left:{x}%; top:{y}%; width:{size}px; height:{size}px; opacity:{opacity};">{label}</div>'
+        )
+    html = f"""
+    <style>
+      .pitch {{
+        position: relative;
+        width: 100%;
+        max-width: 980px;
+        height: 560px;
+        margin: 0 auto 1rem auto;
+        border: 3px solid #14532d;
+        border-radius: 18px;
+        background: linear-gradient(90deg, #dff3df 0 10%, #cfeccf 10% 20%, #dff3df 20% 30%, #cfeccf 30% 40%, #dff3df 40% 50%, #cfeccf 50% 60%, #dff3df 60% 70%, #cfeccf 70% 80%, #dff3df 80% 90%, #cfeccf 90% 100%);
+        overflow: hidden;
+      }}
+      .half {{ position:absolute; top:0; bottom:0; left:50%; width:2px; background:#14532d; opacity:.7; }}
+      .circle {{ position:absolute; left:50%; top:50%; width:110px; height:110px; margin-left:-55px; margin-top:-55px; border:2px solid #14532d; border-radius:50%; opacity:.7; }}
+      .box-left {{ position:absolute; left:0; top:24%; width:17%; height:52%; border:2px solid #14532d; border-left:0; opacity:.7; }}
+      .box-right {{ position:absolute; right:0; top:24%; width:17%; height:52%; border:2px solid #14532d; border-right:0; opacity:.7; }}
+      .marker {{
+        position:absolute;
+        transform:translate(-50%,-50%);
+        border-radius:999px;
+        background:#ffffff;
+        border:2px solid #1f6feb;
+        color:#111827;
+        font-size:12px;
+        line-height:1.05;
+        text-align:center;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 6px 16px rgba(0,0,0,.12);
+        font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }}
+    </style>
+    <div class="pitch">
+      <div class="half"></div><div class="circle"></div><div class="box-left"></div><div class="box-right"></div>
+      {''.join(markers)}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+    if not players_df.empty:
+        summary = players_df["primary_position"].value_counts().reset_index()
+        summary.columns = ["Posición", "Jugadores"]
+        st.dataframe(summary, use_container_width=True, hide_index=True)
 
 
 def page_dashboard() -> None:
     st.title(APP_TITLE)
-    st.caption("Base propia de scouting con flujo jerárquico y control de duplicados.")
+    st.caption("Base propia de scouting con flujo jerárquico y control de duplicados. Sin matplotlib.")
     _, players_view, matches_view, observations_view, _ = enrich_tables()
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Jugadores", len(players_view))
     c2.metric("Partidos", len(matches_view))
     c3.metric("Observaciones", len(observations_view))
     c4.metric("Prioritarios", int((players_view["status"] == "Prioritario").sum()) if not players_view.empty else 0)
-
-    st.subheader("Acceso rápido")
-    st.info("Flujo recomendado: 1) Crear país/liga/equipo si falta. 2) Cargar plantilla. 3) Seleccionar jugador existente o crear nuevo. 4) Añadir observación.")
-
+    st.info("Flujo recomendado: país/liga/equipo → plantilla → jugador existente o nuevo → observación → exportar backup.")
     if not observations_view.empty:
         st.subheader("Últimas observaciones")
-        st.dataframe(observations_view[["created_at", "player", "match", "observed_position", "global_rating", "recommendation"]].tail(10), use_container_width=True)
-    else:
-        st.write("Todavía no hay observaciones.")
+        st.dataframe(observations_view[["created_at", "player", "match", "observed_position", "global_rating", "recommendation"]].tail(10), use_container_width=True, hide_index=True)
 
 
 def page_guided_flow() -> None:
@@ -492,7 +526,6 @@ def page_guided_flow() -> None:
     team_id = ""
     if country_id:
         team_id = team_select("Equipo / selección", scope, country_id, competition_id, "flow_team")
-
     if not team_id:
         st.stop()
 
@@ -503,10 +536,9 @@ def page_guided_flow() -> None:
     if roster.empty:
         st.warning("Este equipo todavía no tiene jugadores cargados.")
     else:
-        st.dataframe(roster[["display_name", "primary_position", "secondary_position", "age", "status", "tags"]], use_container_width=True)
+        st.dataframe(roster[["display_name", "primary_position", "secondary_position", "age", "status", "tags"]], use_container_width=True, hide_index=True)
 
     with st.expander("+ Cargar varios jugadores de golpe", expanded=False):
-        st.write("Pega un jugador por línea. Si ya existe por nombre normalizado, no lo duplica.")
         bulk_text = st.text_area("Plantilla", placeholder="Jugador Uno\nJugador Dos\nJugador Tres", height=160)
         default_pos = st.selectbox("Posición por defecto", [""] + POSITIONS, key="bulk_pos")
         if st.button("Añadir plantilla", key="bulk_add"):
@@ -515,13 +547,7 @@ def page_guided_flow() -> None:
                 name = line.strip()
                 if not name:
                     continue
-                _, was_created, _ = add_player(
-                    name,
-                    nationality_id=country_id,
-                    primary_position=default_pos,
-                    current_team_id=team_id,
-                    status="Sin valorar",
-                )
+                _, was_created, _ = add_player(name, nationality_id=country_id, primary_position=default_pos, current_team_id=team_id, status="Sin valorar")
                 created += int(was_created)
                 skipped += int(not was_created)
             st.success(f"Añadidos: {created}. Ya existentes/no duplicados: {skipped}.")
@@ -529,48 +555,30 @@ def page_guided_flow() -> None:
 
     st.divider()
     mode = st.radio("¿Qué quieres hacer?", ["Puntuar jugador existente", "Añadir jugador nuevo"], horizontal=True)
-
     selected_player_id = ""
     if mode == "Puntuar jugador existente":
         selected_player_id = player_select("Jugador", team_id, "flow_existing_player")
-        if selected_player_id:
-            player = players[players["player_id"] == selected_player_id].iloc[0]
-            st.success(f"Seleccionado: {player['display_name']}")
     else:
-        with st.form("new_player_form"):
-            name = st.text_input("Nombre del jugador")
-            duplicate_id = show_duplicate_warning(name)
-            col1, col2, col3 = st.columns(3)
-            primary = col1.selectbox("Posición principal", [""] + POSITIONS)
-            secondary = col2.selectbox("Posición secundaria", [""] + POSITIONS)
-            foot = col3.selectbox("Pierna dominante", FOOTS)
-            col4, col5, col6 = st.columns(3)
-            age = col4.text_input("Edad")
-            height = col5.text_input("Altura cm")
-            status = col6.selectbox("Estado", PLAYER_STATUS)
-            tags = st.text_input("Etiquetas", placeholder="Sub-21, físico top, zurdo, revisar...")
-            notes = st.text_area("Notas generales")
-            submitted = st.form_submit_button("Guardar jugador")
-            if submitted:
-                if duplicate_id:
-                    st.warning("No lo he creado porque parece duplicado. Selecciona el existente o fusiona desde la página de duplicados.")
-                else:
-                    pid, created, msg = add_player(
-                        name,
-                        nationality_id=country_id,
-                        primary_position=primary,
-                        secondary_position=secondary,
-                        dominant_foot=foot,
-                        age=age,
-                        height_cm=height,
-                        current_team_id=team_id,
-                        status=status,
-                        tags=tags,
-                        general_notes=notes,
-                    )
-                    st.success(msg) if created else st.info(msg)
-                    st.session_state["last_player_id"] = pid
-                    st.rerun()
+        name = st.text_input("Nombre del jugador")
+        duplicate_id = show_duplicate_warning(name)
+        col1, col2, col3 = st.columns(3)
+        primary = col1.selectbox("Posición principal", [""] + POSITIONS)
+        secondary = col2.selectbox("Posición secundaria", [""] + POSITIONS)
+        foot = col3.selectbox("Pierna dominante", FOOTS)
+        col4, col5, col6 = st.columns(3)
+        age = col4.text_input("Edad")
+        height = col5.text_input("Altura cm")
+        status = col6.selectbox("Estado", PLAYER_STATUS)
+        tags = st.text_input("Etiquetas", placeholder="Sub-21, físico top, zurdo, revisar...")
+        notes = st.text_area("Notas generales")
+        if st.button("Guardar jugador"):
+            if duplicate_id:
+                st.warning("No lo he creado porque parece duplicado. Selecciona el existente o fusiona desde Duplicados.")
+            else:
+                pid, created, msg = add_player(name, nationality_id=country_id, primary_position=primary, secondary_position=secondary, dominant_foot=foot, age=age, height_cm=height, current_team_id=team_id, status=status, tags=tags, general_notes=notes)
+                st.success(msg) if created else st.info(msg)
+                st.session_state["last_player_id"] = pid
+                st.rerun()
         selected_player_id = st.session_state.get("last_player_id", "")
 
     if selected_player_id:
@@ -578,7 +586,6 @@ def page_guided_flow() -> None:
         st.subheader("Añadir observación")
         matches = load_table("matches")
         teams = load_table("teams")
-        comps = load_table("competitions")
         match_options = [""] + matches["match_id"].tolist()
         match_labels = {"": "— Sin partido / crear luego —"}
         match_labels.update(dict(zip(matches["match_id"], matches["match_name"])))
@@ -593,7 +600,7 @@ def page_guided_flow() -> None:
             away_name = get_name(teams, "team_id", away, "name")
             match_name = st.text_input("Nombre del partido", value=f"{home_name} - {away_name}" if home_name and away_name else "")
             if st.button("Guardar partido rápido"):
-                mid, created, msg = add_match(str(match_date), match_name, comp_for_match, home, away, "", "")
+                _, created, msg = add_match(str(match_date), match_name, comp_for_match, home, away, "", "")
                 st.success(msg) if created else st.info(msg)
                 st.rerun()
 
@@ -615,24 +622,7 @@ def page_guided_flow() -> None:
             recommendation = st.selectbox("Recomendación", PLAYER_STATUS)
             submit_obs = st.form_submit_button("Guardar observación")
             if submit_obs:
-                oid, created, msg = add_observation(
-                    player_id=selected_player_id,
-                    match_id=selected_match,
-                    team_id=team_id,
-                    observed_position=observed_pos,
-                    minutes_observed=minutes,
-                    role=role,
-                    action_type=action_type,
-                    minute_note=minute_note,
-                    positive_notes=pos_notes,
-                    improvement_notes=imp_notes,
-                    technical_rating=str(technical),
-                    tactical_rating=str(tactical),
-                    physical_rating=str(physical),
-                    mental_rating=str(mental),
-                    global_rating=str(global_rating),
-                    recommendation=recommendation,
-                )
+                _, created, msg = add_observation(player_id=selected_player_id, match_id=selected_match, team_id=team_id, observed_position=observed_pos, minutes_observed=minutes, role=role, action_type=action_type, minute_note=minute_note, positive_notes=pos_notes, improvement_notes=imp_notes, technical_rating=str(technical), tactical_rating=str(tactical), physical_rating=str(physical), mental_rating=str(mental), global_rating=str(global_rating), recommendation=recommendation)
                 st.success(msg) if created else st.error(msg)
 
 
@@ -648,7 +638,6 @@ def page_structure() -> None:
             st.success("Países guardados.")
     with tab2:
         df = load_table("competitions")
-        st.caption("country_id se puede copiar desde la tabla de países. En el flujo guiado no necesitas tocar IDs.")
         edited = st.data_editor(df, use_container_width=True, num_rows="dynamic", key="edit_comps")
         if st.button("Guardar competiciones"):
             edited["normalized_name"] = edited["name"].apply(normalize_text)
@@ -656,7 +645,7 @@ def page_structure() -> None:
             st.success("Competiciones guardadas.")
     with tab3:
         teams_view, _, _, _, _ = enrich_tables()
-        st.dataframe(teams_view[["team_id", "name", "team_type", "country", "competition"]], use_container_width=True)
+        st.dataframe(teams_view[["team_id", "name", "team_type", "country", "competition"]], use_container_width=True, hide_index=True)
         df = load_table("teams")
         edited = st.data_editor(df, use_container_width=True, num_rows="dynamic", key="edit_teams")
         if st.button("Guardar equipos"):
@@ -667,7 +656,6 @@ def page_structure() -> None:
 
 def page_matches() -> None:
     st.title("Partidos")
-    countries = load_table("countries")
     country_id = country_select("País principal", "match_country")
     competition_id = competition_select("Competición", country_id, "match_comp") if country_id else ""
     scope = st.radio("Tipo de equipos", TEAM_TYPES, horizontal=True, key="match_scope")
@@ -683,11 +671,11 @@ def page_matches() -> None:
         context = st.text_area("Contexto", placeholder="Eurocopa, Mundial, amistoso, playoff, jornada...")
         submit = st.form_submit_button("Crear partido")
         if submit:
-            mid, created, msg = add_match(str(mdate), mname, competition_id, home_id, away_id, season, context)
+            _, created, msg = add_match(str(mdate), mname, competition_id, home_id, away_id, season, context)
             st.success(msg) if created else st.info(msg)
     _, _, matches_view, _, _ = enrich_tables()
     st.subheader("Partidos registrados")
-    st.dataframe(matches_view[["match_id", "match_date", "match_name", "competition", "home_team", "away_team", "season", "context"]], use_container_width=True)
+    st.dataframe(matches_view[["match_id", "match_date", "match_name", "competition", "home_team", "away_team", "season", "context"]], use_container_width=True, hide_index=True)
 
 
 def page_players() -> None:
@@ -707,7 +695,7 @@ def page_players() -> None:
         df = df[df["status"].isin(status_filter)]
     if search:
         df = df[df["display_name"].str.contains(search, case=False, na=False)]
-    st.dataframe(df[["player_id", "display_name", "current_team", "nationality", "primary_position", "age", "status", "tags"]], use_container_width=True)
+    st.dataframe(df[["player_id", "display_name", "current_team", "nationality", "primary_position", "age", "status", "tags"]], use_container_width=True, hide_index=True)
 
     st.subheader("Ficha individual")
     options = [""] + players_view["player_id"].tolist()
@@ -726,7 +714,7 @@ def page_players() -> None:
         st.write("**Notas generales:**", player.get("general_notes", ""))
         if not obs.empty:
             st.subheader("Observaciones acumuladas")
-            st.dataframe(obs[["created_at", "match", "observed_position", "role", "action_type", "global_rating", "recommendation", "positive_notes", "improvement_notes"]], use_container_width=True)
+            st.dataframe(obs[["created_at", "match", "observed_position", "role", "action_type", "global_rating", "recommendation", "positive_notes", "improvement_notes"]], use_container_width=True, hide_index=True)
             report = f"# Informe rápido - {player['display_name']}\n\n"
             report += f"Equipo: {player.get('current_team','')}\nPosición: {player.get('primary_position','')}\nEstado: {player.get('status','')}\n\n"
             for _, r in obs.iterrows():
@@ -739,7 +727,6 @@ def page_players() -> None:
 
 def page_duplicate_center() -> None:
     st.title("Control de duplicados")
-    st.caption("Detecta nombres iguales sin tildes/mayúsculas y permite fusionar fichas duplicadas.")
     players = load_table("players")
     if players.empty:
         st.warning("No hay jugadores.")
@@ -749,7 +736,7 @@ def page_duplicate_center() -> None:
         st.success("No hay duplicados exactos por nombre normalizado.")
     else:
         st.warning("Duplicados exactos detectados:")
-        st.dataframe(dupes[["player_id", "display_name", "normalized_name", "current_team_id", "primary_position"]], use_container_width=True)
+        st.dataframe(dupes[["player_id", "display_name", "normalized_name", "current_team_id", "primary_position"]], use_container_width=True, hide_index=True)
 
     st.subheader("Fusionar dos jugadores")
     options = [""] + players["player_id"].tolist()
@@ -758,7 +745,6 @@ def page_duplicate_center() -> None:
     keep_id = st.selectbox("Jugador correcto que se queda", options, format_func=lambda x: labels.get(x, x), key="keep_player")
     merge_id = st.selectbox("Jugador duplicado que se fusiona/elimina", options, format_func=lambda x: labels.get(x, x), key="merge_player")
     if keep_id and merge_id and keep_id != merge_id:
-        st.info("La fusión mueve observaciones y alias al jugador correcto, crea alias con el nombre duplicado y elimina la ficha duplicada.")
         if st.button("Fusionar jugadores"):
             observations = load_table("observations")
             aliases = load_table("aliases")
@@ -814,7 +800,7 @@ def page_pitch_and_compare() -> None:
             "Mental": pd.to_numeric(obs["mental_rating"], errors="coerce").mean() if not obs.empty else None,
             "Global": pd.to_numeric(obs["global_rating"], errors="coerce").mean() if not obs.empty else None,
         })
-    st.dataframe(pd.DataFrame(rows), use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
 def page_data_editor() -> None:
