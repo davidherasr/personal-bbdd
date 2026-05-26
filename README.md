@@ -1,19 +1,41 @@
-# 🎈 Blank app template
+# Scouting Hub v0.3
 
-A simple Streamlit app template for you to modify!
+Aplicación Streamlit para crear una base propia de scouting con flujo jerárquico:
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+- Países
+- Competiciones / ligas
+- Equipos / selecciones
+- Plantillas
+- Jugadores
+- Partidos
+- Observaciones
 
-### How to run it on your own machine
+## Novedades v0.3
 
-1. Install the requirements
+- Flujo guiado desde lo grande a lo pequeño: país → liga/competición → equipo → jugador.
+- Modo club y modo selección.
+- Detección básica de duplicados por normalización de texto: ignora mayúsculas, tildes y espacios dobles.
+- Posibilidad de añadir países, competiciones, equipos y jugadores desde el propio flujo.
+- Carga masiva de plantilla mediante texto pegado línea a línea.
+- Página específica para fusionar jugadores duplicados.
+- Exportación completa a Excel y ZIP.
+- Importación desde ZIP de backup o Excel exportado.
+- Fichas de jugador y observaciones acumuladas.
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+## Cómo ejecutarla en local
 
-2. Run the app
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## Cómo subirla a Streamlit Cloud
+
+1. Sube `app.py`, `requirements.txt`, `README.md` y la carpeta `.streamlit/` a un repositorio de GitHub.
+2. Crea una app nueva en Streamlit Community Cloud.
+3. Selecciona `app.py` como archivo principal.
+4. Usa siempre la página `Backup / Importar / Exportar` para guardar una copia de tus datos.
+
+## Nota importante
+
+En Streamlit Cloud, los CSV locales pueden perderse en reinicios o redeploys. La app está pensada para trabajar con backups: exportar al acabar e importar al volver.
