@@ -1,1 +1,6 @@
 match_id,match_date,match_name,competition_id,home_team_id,away_team_id,season,context,created_at
+MAT0001,2025-09-01,Manchester City - Arsenal,CMP0001,TEA0001,TEA0002,2025/26,Partido de referencia para observación de élite,2026-06-02 00:00:00
+MAT0002,2025-10-01,Real Madrid - FC Barcelona,CMP0003,TEA0059,TEA0051,2025/26,Clásico / seguimiento de perfiles ofensivos,2026-06-02 00:00:00
+MAT0003,2025-11-01,Inter Milan - Juventus FC,CMP0006,TEA0094,TEA0095,2025/26,Derbi de Italia / comparación de estructuras,2026-06-02 00:00:00
+MAT0004,2025-12-01,Bayern Munich - Borussia Dortmund,CMP0008,TEA0127,TEA0129,2025/26,Klassiker / perfiles de presión y ataque,2026-06-02 00:00:00
+MAT0005,2025-12-15,Paris Saint-Germain - Olympique de Marseille,CMP0010,TEA0163,TEA0164,2025/26,Le Classique / seguimiento Ligue 1,2026-06-02 00:00:00

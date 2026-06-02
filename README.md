@@ -1,6 +1,6 @@
-# Scouting Hub v0.4
+# Scouting Hub v0.5
 
-Aplicación Streamlit para crear una base propia de scouting: jugadores, equipos, partidos, observaciones, prioridades, duplicados, dashboard, investigación, comparador, campograma y backup.
+Aplicación Streamlit para crear una base propia de scouting: países, competiciones, equipos, jugadores, partidos, observaciones, scoring de prioridad, control de duplicados y backup.
 
 ## Ejecutar en local
 
@@ -11,19 +11,10 @@ streamlit run streamlit_app.py
 
 ## Desplegar en Streamlit Cloud
 
-1. Sube estos archivos a la raíz de tu repositorio de GitHub.
-2. En Streamlit Cloud selecciona `streamlit_app.py` como Main file path.
-3. La app instalará dependencias desde `requirements.txt`.
+- Sube todos los archivos a la raíz del repositorio.
+- Main file path: `streamlit_app.py`
+- Mantén la carpeta `data/` si quieres arrancar con el dataset inicial.
 
-## Uso recomendado
+## Datos
 
-1. Entra en **Añadir / puntuar jugador**.
-2. Selecciona país, liga/competición y equipo/selección.
-3. Carga plantilla o selecciona jugador existente.
-4. Añade observaciones con notas y próximo paso.
-5. Revisa **Dashboard**, **Jugadores**, **Investigación** y **Duplicados**.
-6. Exporta ZIP o Excel al terminar cada sesión.
-
-## Aviso sobre persistencia
-
-En Streamlit Cloud el almacenamiento local puede reiniciarse. Exporta el ZIP o Excel cuando termines y reimpórtalo cuando quieras continuar.
+Incluye CSV iniciales en `data/` para no arrancar de cero: países, competiciones, equipos, jugadores semilla y partidos de ejemplo. Exporta siempre desde la pestaña Backup antes de cerrar la app en la nube.

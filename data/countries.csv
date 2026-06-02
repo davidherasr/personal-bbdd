@@ -1,15 +1,54 @@
 country_id,name,normalized_name,created_at
-CTY0001,España,espana,2026-05-26 14:56:04
-CTY0002,Italia,italia,2026-05-26 14:56:04
-CTY0003,Francia,francia,2026-05-26 14:56:04
-CTY0004,Alemania,alemania,2026-05-26 14:56:04
-CTY0005,Inglaterra,inglaterra,2026-05-26 14:56:04
-CTY0006,Portugal,portugal,2026-05-26 14:56:04
-CTY0007,Países Bajos,paises bajos,2026-05-26 14:56:04
-CTY0008,Bélgica,belgica,2026-05-26 14:56:04
-CTY0009,Argentina,argentina,2026-05-26 14:56:04
-CTY0010,Brasil,brasil,2026-05-26 14:56:04
-CTY0011,Uruguay,uruguay,2026-05-26 14:56:04
-CTY0012,Croacia,croacia,2026-05-26 14:56:04
-CTY0013,Marruecos,marruecos,2026-05-26 14:56:04
-CTY0014,Estados Unidos,estados unidos,2026-05-26 14:56:04
+CTY0001,España,espana,2026-06-02 00:00:00
+CTY0002,Inglaterra,inglaterra,2026-06-02 00:00:00
+CTY0003,Italia,italia,2026-06-02 00:00:00
+CTY0004,Alemania,alemania,2026-06-02 00:00:00
+CTY0005,Francia,francia,2026-06-02 00:00:00
+CTY0006,Portugal,portugal,2026-06-02 00:00:00
+CTY0007,Países Bajos,paises bajos,2026-06-02 00:00:00
+CTY0008,Bélgica,belgica,2026-06-02 00:00:00
+CTY0009,Argentina,argentina,2026-06-02 00:00:00
+CTY0010,Brasil,brasil,2026-06-02 00:00:00
+CTY0011,Uruguay,uruguay,2026-06-02 00:00:00
+CTY0012,Croacia,croacia,2026-06-02 00:00:00
+CTY0013,Marruecos,marruecos,2026-06-02 00:00:00
+CTY0014,Noruega,noruega,2026-06-02 00:00:00
+CTY0015,Suecia,suecia,2026-06-02 00:00:00
+CTY0016,Dinamarca,dinamarca,2026-06-02 00:00:00
+CTY0017,Suiza,suiza,2026-06-02 00:00:00
+CTY0018,Austria,austria,2026-06-02 00:00:00
+CTY0019,Estados Unidos,estados unidos,2026-06-02 00:00:00
+CTY0020,Costa de Marfil,costa de marfil,2026-06-02 00:00:00
+CTY0021,Senegal,senegal,2026-06-02 00:00:00
+CTY0022,Ghana,ghana,2026-06-02 00:00:00
+CTY0023,Nigeria,nigeria,2026-06-02 00:00:00
+CTY0024,Argelia,argelia,2026-06-02 00:00:00
+CTY0025,Egipto,egipto,2026-06-02 00:00:00
+CTY0026,Turquía,turquia,2026-06-02 00:00:00
+CTY0027,Polonia,polonia,2026-06-02 00:00:00
+CTY0028,Serbia,serbia,2026-06-02 00:00:00
+CTY0029,Eslovenia,eslovenia,2026-06-02 00:00:00
+CTY0030,Georgia,georgia,2026-06-02 00:00:00
+CTY0031,Japón,japon,2026-06-02 00:00:00
+CTY0032,Corea del Sur,corea del sur,2026-06-02 00:00:00
+CTY0033,Colombia,colombia,2026-06-02 00:00:00
+CTY0034,Ecuador,ecuador,2026-06-02 00:00:00
+CTY0035,México,mexico,2026-06-02 00:00:00
+CTY0036,Canadá,canada,2026-06-02 00:00:00
+CTY0037,Camerún,camerun,2026-06-02 00:00:00
+CTY0038,Malí,mali,2026-06-02 00:00:00
+CTY0039,Guinea,guinea,2026-06-02 00:00:00
+CTY0040,República Checa,republica checa,2026-06-02 00:00:00
+CTY0041,Escocia,escocia,2026-06-02 00:00:00
+CTY0042,Gales,gales,2026-06-02 00:00:00
+CTY0043,Hungría,hungria,2026-06-02 00:00:00
+CTY0044,Rusia,rusia,2026-06-02 00:00:00
+CTY0045,Kosovo,kosovo,2026-06-02 00:00:00
+CTY0046,Eslovaquia,eslovaquia,2026-06-02 00:00:00
+CTY0047,Finlandia,finlandia,2026-06-02 00:00:00
+CTY0048,Burkina Faso,burkina faso,2026-06-02 00:00:00
+CTY0049,DR Congo,dr congo,2026-06-02 00:00:00
+CTY0050,Bosnia,bosnia,2026-06-02 00:00:00
+CTY0051,Grecia,grecia,2026-06-02 00:00:00
+CTY0052,Uzbekistán,uzbekistan,2026-06-02 00:00:00
+CTY0053,Ucrania,ucrania,2026-06-02 00:00:00

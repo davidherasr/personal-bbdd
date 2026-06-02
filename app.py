@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 import pandas as pd
 import streamlit as st
 
-APP_TITLE = "Scouting Hub v0.4"
+APP_TITLE = "Scouting Hub v0.5"
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -1157,6 +1157,33 @@ def page_backup() -> None:
         st.rerun()
 
 
+def page_dataset_info() -> None:
+    hero("Dataset inicial 2025/26", "Estructura precargada con grandes ligas, segundas divisiones y un paquete de jugadores semilla para arrancar el trabajo sin la base vacía.", "Datos", "Starter")
+    teams = load_table("teams")
+    players = load_table("players")
+    comps = load_table("competitions")
+    countries = load_table("countries")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Países", len(countries))
+    c2.metric("Competiciones", len(comps))
+    c3.metric("Equipos/selecciones", len(teams))
+    c4.metric("Jugadores semilla", len(players))
+    st.info("El dataset inicial está pensado para empezar a trabajar y filtrar, no como certificado oficial de inscripción de plantilla. Las plantillas cambian con mercado, lesiones y dorsales; por eso la app mantiene importación/exportación para que puedas corregir y enriquecer tu propia base.")
+    st.subheader("Cobertura por competición")
+    if not teams.empty:
+        _, teams_view, _, _, _ = enrich_tables()[0], None, None, None, None
+        teams_view = enrich_tables()[0]
+        coverage = teams_view.groupby(["country", "competition", "team_type"], dropna=False).size().reset_index(name="equipos")
+        st.dataframe(coverage.sort_values(["country", "competition"]), use_container_width=True)
+    st.subheader("Jugadores cargados por equipo")
+    if not players.empty and not teams.empty:
+        teams_view, players_view, *_ = enrich_tables()
+        counts = players_view.groupby("current_team").size().reset_index(name="jugadores").sort_values("jugadores", ascending=False)
+        st.dataframe(counts, use_container_width=True)
+    st.subheader("Siguiente paso recomendado")
+    st.write("Usa **Añadir / puntuar jugador** para cargar plantillas completas por equipo cuando vayas viendo partidos. Si un jugador ya existe con tilde/sin tilde, el control de duplicados lo detecta mediante nombre normalizado y alias.")
+
+
 def main() -> None:
     st.set_page_config(page_title=APP_TITLE, layout="wide", page_icon="⚽")
     inject_css()
@@ -1174,6 +1201,7 @@ def main() -> None:
             "Duplicados",
             "Campograma / comparador",
             "Base editable",
+            "Dataset inicial",
             "Backup / Importar / Exportar",
         ],
     )
@@ -1195,6 +1223,8 @@ def main() -> None:
         page_pitch_and_compare()
     elif page == "Base editable":
         page_data_editor()
+    elif page == "Dataset inicial":
+        page_dataset_info()
     elif page == "Backup / Importar / Exportar":
         page_backup()
 

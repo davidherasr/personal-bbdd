@@ -1,1 +1,231 @@
-team_id,name,normalized_name,team_type,country_id,competition_id,created_at
+team_id,name,normalized_name,team_type,country_id,competition_id,locality,locality_band,created_at
+TEA0001,Manchester City,manchester city,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0002,Arsenal FC,arsenal fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0003,Chelsea FC,chelsea fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0004,Liverpool FC,liverpool fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0005,Tottenham Hotspur,tottenham hotspur,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0006,Manchester United,manchester united,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0007,Newcastle United,newcastle united,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0008,Nottingham Forest,nottingham forest,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0009,Crystal Palace,crystal palace,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0010,Aston Villa,aston villa,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0011,Brighton & Hove Albion,brighton hove albion,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0012,AFC Bournemouth,afc bournemouth,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0013,Brentford FC,brentford fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0014,Everton FC,everton fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0015,Fulham FC,fulham fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0016,Sunderland AFC,sunderland afc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0017,West Ham United,west ham united,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0018,Leeds United,leeds united,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0019,Wolverhampton Wanderers,wolverhampton wanderers,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0020,Burnley FC,burnley fc,Club,CTY0002,CMP0001,,Cantera profesional,2026-06-02 00:00:00
+TEA0021,Birmingham City,birmingham city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0022,Blackburn Rovers,blackburn rovers,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0023,Bristol City,bristol city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0024,Charlton Athletic,charlton athletic,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0025,Coventry City,coventry city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0026,Derby County,derby county,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0027,Hull City,hull city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0028,Ipswich Town,ipswich town,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0029,Leicester City,leicester city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0030,Middlesbrough FC,middlesbrough fc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0031,Millwall FC,millwall fc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0032,Norwich City,norwich city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0033,Oxford United,oxford united,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0034,Portsmouth FC,portsmouth fc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0035,Preston North End,preston north end,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0036,Queens Park Rangers,queens park rangers,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0037,Sheffield United,sheffield united,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0038,Sheffield Wednesday,sheffield wednesday,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0039,Southampton FC,southampton fc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0040,Stoke City,stoke city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0041,Swansea City,swansea city,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0042,Watford FC,watford fc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0043,West Bromwich Albion,west bromwich albion,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0044,Wrexham AFC,wrexham afc,Club,CTY0002,CMP0002,,Cantera profesional,2026-06-02 00:00:00
+TEA0045,Athletic Club,athletic club,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0046,Atlético de Madrid,atletico de madrid,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0047,CA Osasuna,ca osasuna,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0048,RC Celta,rc celta,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0049,Deportivo Alavés,deportivo alaves,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0050,Elche CF,elche cf,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0051,FC Barcelona,fc barcelona,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0052,Getafe CF,getafe cf,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0053,Girona FC,girona fc,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0054,Levante UD,levante ud,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0055,RCD Espanyol,rcd espanyol,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0056,RCD Mallorca,rcd mallorca,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0057,Rayo Vallecano,rayo vallecano,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0058,Real Betis,real betis,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0059,Real Madrid,real madrid,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0060,Real Oviedo,real oviedo,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0061,Real Sociedad,real sociedad,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0062,Sevilla FC,sevilla fc,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0063,Valencia CF,valencia cf,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0064,Villarreal CF,villarreal cf,Club,CTY0001,CMP0003,,Cantera profesional,2026-06-02 00:00:00
+TEA0065,AD Ceuta FC,ad ceuta fc,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0066,Albacete BP,albacete bp,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0067,Burgos CF,burgos cf,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0068,Cádiz CF,cadiz cf,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0069,CD Castellón,cd castellon,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0070,CD Leganés,cd leganes,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0071,CD Mirandés,cd mirandes,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0072,Córdoba CF,cordoba cf,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0073,Cultural Leonesa,cultural leonesa,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0074,Deportivo de La Coruña,deportivo de la coruna,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0075,Eibar,eibar,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0076,FC Andorra,fc andorra,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0077,Granada CF,granada cf,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0078,Málaga CF,malaga cf,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0079,Racing de Santander,racing de santander,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0080,Real Sporting,real sporting,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0081,Real Valladolid,real valladolid,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0082,SD Huesca,sd huesca,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0083,UD Almería,ud almeria,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0084,UD Las Palmas,ud las palmas,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0085,Zaragoza,zaragoza,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0086,SD Eibar,sd eibar,Club,CTY0001,CMP0004,,Cantera profesional,2026-06-02 00:00:00
+TEA0087,Atalanta BC,atalanta bc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0088,Bologna FC,bologna fc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0089,Cagliari Calcio,cagliari calcio,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0090,Como 1907,como 1907,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0091,Cremonese,cremonese,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0092,ACF Fiorentina,acf fiorentina,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0093,Genoa CFC,genoa cfc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0094,Inter Milan,inter milan,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0095,Juventus FC,juventus fc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0096,SS Lazio,ss lazio,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0097,Lecce,lecce,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0098,AC Milan,ac milan,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0099,SSC Napoli,ssc napoli,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0100,Parma Calcio,parma calcio,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0101,Pisa SC,pisa sc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0102,AS Roma,as roma,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0103,Sassuolo,sassuolo,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0104,Torino FC,torino fc,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0105,Udinese Calcio,udinese calcio,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0106,Hellas Verona,hellas verona,Club,CTY0003,CMP0006,,Cantera profesional,2026-06-02 00:00:00
+TEA0107,Venezia FC,venezia fc,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0108,AC Monza,ac monza,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0109,UC Sampdoria,uc sampdoria,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0110,Frosinone Calcio,frosinone calcio,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0111,Palermo FC,palermo fc,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0112,US Catanzaro,us catanzaro,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0113,Spezia Calcio,spezia calcio,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0114,FC Empoli,fc empoli,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0115,Modena FC,modena fc,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0116,Cesena FC,cesena fc,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0117,SSC Bari,ssc bari,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0118,Mantova 1911,mantova 1911,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0119,Carrarese Calcio,carrarese calcio,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0120,Juve Stabia,juve stabia,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0121,US Avellino,us avellino,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0122,Delfino Pescara,delfino pescara,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0123,FC Südtirol,fc sudtirol,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0124,AC Reggiana,ac reggiana,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0125,Calcio Padova,calcio padova,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0126,Virtus Entella,virtus entella,Club,CTY0003,CMP0007,,Cantera profesional,2026-06-02 00:00:00
+TEA0127,Bayern Munich,bayern munich,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0128,RB Leipzig,rb leipzig,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0129,Borussia Dortmund,borussia dortmund,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0130,Bayer Leverkusen,bayer leverkusen,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0131,VfB Stuttgart,vfb stuttgart,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0132,Eintracht Frankfurt,eintracht frankfurt,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0133,TSG Hoffenheim,tsg hoffenheim,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0134,SC Freiburg,sc freiburg,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0135,VfL Wolfsburg,vfl wolfsburg,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0136,Hamburger SV,hamburger sv,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0137,Werder Bremen,werder bremen,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0138,FC Augsburg,fc augsburg,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0139,Mainz 05,mainz 05,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0140,1. FC Köln,1 fc koln,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0141,Borussia Mönchengladbach,borussia monchengladbach,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0142,Union Berlin,union berlin,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0143,Heidenheim,heidenheim,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0144,FC St. Pauli,fc st pauli,Club,CTY0004,CMP0008,,Cantera profesional,2026-06-02 00:00:00
+TEA0145,Hertha BSC,hertha bsc,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0146,Schalke 04,schalke 04,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0147,Hannover 96,hannover 96,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0148,Fortuna Düsseldorf,fortuna dusseldorf,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0149,Karlsruher SC,karlsruher sc,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0150,1. FC Nürnberg,1 fc nurnberg,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0151,Kaiserslautern,kaiserslautern,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0152,Greuther Fürth,greuther furth,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0153,Paderborn 07,paderborn 07,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0154,Darmstadt 98,darmstadt 98,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0155,Magdeburg,magdeburg,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0156,Eintracht Braunschweig,eintracht braunschweig,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0157,Preußen Münster,preu en munster,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0158,Holstein Kiel,holstein kiel,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0159,VfL Bochum,vfl bochum,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0160,Dynamo Dresden,dynamo dresden,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0161,Arminia Bielefeld,arminia bielefeld,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0162,Elversberg,elversberg,Club,CTY0004,CMP0009,,Cantera profesional,2026-06-02 00:00:00
+TEA0163,Paris Saint-Germain,paris saint-germain,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0164,Olympique de Marseille,olympique de marseille,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0165,AS Monaco,as monaco,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0166,Olympique Lyon,olympique lyon,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0167,Lille OSC,lille osc,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0168,RC Lens,rc lens,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0169,Stade Rennais,stade rennais,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0170,OGC Nice,ogc nice,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0171,RC Strasbourg,rc strasbourg,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0172,FC Nantes,fc nantes,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0173,Toulouse FC,toulouse fc,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0174,Angers SCO,angers sco,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0175,AJ Auxerre,aj auxerre,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0176,Stade Brestois,stade brestois,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0177,Le Havre AC,le havre ac,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0178,FC Lorient,fc lorient,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0179,Paris FC,paris fc,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0180,FC Metz,fc metz,Club,CTY0005,CMP0010,,Cantera profesional,2026-06-02 00:00:00
+TEA0181,Stade Reims,stade reims,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0182,AS Saint-Étienne,as saint-etienne,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0183,ESTAC Troyes,estac troyes,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0184,USL Dunkerque,usl dunkerque,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0185,Montpellier HSC,montpellier hsc,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0186,Amiens SC,amiens sc,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0187,Pau FC,pau fc,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0188,Rodez AF,rodez af,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0189,Le Mans FC,le mans fc,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0190,Clermont Foot 63,clermont foot 63,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0191,Red Star FC,red star fc,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0192,EA Guingamp,ea guingamp,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0193,AS Nancy-Lorraine,as nancy-lorraine,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0194,SC Bastia,sc bastia,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0195,Grenoble Foot 38,grenoble foot 38,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0196,FC Annecy,fc annecy,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0197,Stade Lavallois,stade lavallois,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0198,US Boulogne,us boulogne,Club,CTY0005,CMP0011,,Cantera profesional,2026-06-02 00:00:00
+TEA0199,SL Benfica,sl benfica,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0200,FC Porto,fc porto,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0201,Sporting CP,sporting cp,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0202,SC Braga,sc braga,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0203,Vitória SC,vitoria sc,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0204,Boavista FC,boavista fc,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0205,Casa Pia AC,casa pia ac,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0206,Famalicão,famalicao,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0207,Estoril Praia,estoril praia,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0208,Gil Vicente FC,gil vicente fc,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0209,Moreirense FC,moreirense fc,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0210,Rio Ave FC,rio ave fc,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0211,Santa Clara,santa clara,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0212,Arouca,arouca,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0213,Nacional,nacional,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0214,AVS Futebol SAD,avs futebol sad,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0215,Tondela,tondela,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0216,Alverca,alverca,Club,CTY0006,CMP0012,,Cantera profesional,2026-06-02 00:00:00
+TEA0217,Selección España,seleccion espana,Selección,CTY0001,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0218,Selección Italia,seleccion italia,Selección,CTY0003,CMP0014,,Selección,2026-06-02 00:00:00
+TEA0219,Selección Inglaterra,seleccion inglaterra,Selección,CTY0002,CMP0015,,Selección,2026-06-02 00:00:00
+TEA0220,Selección Francia,seleccion francia,Selección,CTY0005,CMP0016,,Selección,2026-06-02 00:00:00
+TEA0221,Selección Alemania,seleccion alemania,Selección,CTY0004,CMP0017,,Selección,2026-06-02 00:00:00
+TEA0222,Selección Portugal,seleccion portugal,Selección,CTY0006,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0223,Selección Países Bajos,seleccion paises bajos,Selección,CTY0007,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0224,Selección Brasil,seleccion brasil,Selección,CTY0010,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0225,Selección Argentina,seleccion argentina,Selección,CTY0009,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0226,Selección Marruecos,seleccion marruecos,Selección,CTY0013,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0227,Selección Estados Unidos,seleccion estados unidos,Selección,CTY0019,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0228,Selección Noruega,seleccion noruega,Selección,CTY0014,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0229,Selección Croacia,seleccion croacia,Selección,CTY0012,CMP0013,,Selección,2026-06-02 00:00:00
+TEA0230,Selección Bélgica,seleccion belgica,Selección,CTY0008,CMP0013,,Selección,2026-06-02 00:00:00
