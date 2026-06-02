@@ -1,0 +1,13 @@
+competition_id,name,normalized_name,country_id,level,season,created_at
+CMP0001,LaLiga,laliga,CTY0001,1ª,2025/26,2026-05-26 14:56:04
+CMP0002,LaLiga Hypermotion,laliga hypermotion,CTY0001,2ª,2025/26,2026-05-26 14:56:04
+CMP0003,Primera Federación,primera federacion,CTY0001,3ª,2025/26,2026-05-26 14:56:04
+CMP0004,Segunda Federación,segunda federacion,CTY0001,4ª,2025/26,2026-05-26 14:56:04
+CMP0005,Primera Regional Castilla y León,primera regional castilla y leon,CTY0001,Regional,2025/26,2026-05-26 14:56:04
+CMP0006,Serie A,serie a,CTY0002,1ª,2025/26,2026-05-26 14:56:04
+CMP0007,Serie B,serie b,CTY0002,2ª,2025/26,2026-05-26 14:56:04
+CMP0008,Premier League,premier league,CTY0005,1ª,2025/26,2026-05-26 14:56:04
+CMP0009,Championship,championship,CTY0005,2ª,2025/26,2026-05-26 14:56:04
+CMP0010,Bundesliga,bundesliga,CTY0004,1ª,2025/26,2026-05-26 14:56:04
+CMP0011,Ligue 1,ligue 1,CTY0003,1ª,2025/26,2026-05-26 14:56:04
+CMP0012,Primeira Liga,primeira liga,CTY0006,1ª,2025/26,2026-05-26 14:56:04

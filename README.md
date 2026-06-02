@@ -1,6 +1,6 @@
-# Scouting Hub v0.3.3
+# Scouting Hub v0.4
 
-App de scouting en Streamlit con flujo jerárquico: país → competición → equipo/selección → jugador → observación.
+Aplicación Streamlit para crear una base propia de scouting: jugadores, equipos, partidos, observaciones, prioridades, duplicados, dashboard, investigación, comparador, campograma y backup.
 
 ## Ejecutar en local
 
@@ -9,12 +9,21 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-## Deploy en Streamlit Cloud
+## Desplegar en Streamlit Cloud
 
-Main file path:
+1. Sube estos archivos a la raíz de tu repositorio de GitHub.
+2. En Streamlit Cloud selecciona `streamlit_app.py` como Main file path.
+3. La app instalará dependencias desde `requirements.txt`.
 
-```txt
-streamlit_app.py
-```
+## Uso recomendado
 
-Esta versión NO usa matplotlib. El campograma está hecho en HTML/CSS/SVG básico para evitar errores de dependencia.
+1. Entra en **Añadir / puntuar jugador**.
+2. Selecciona país, liga/competición y equipo/selección.
+3. Carga plantilla o selecciona jugador existente.
+4. Añade observaciones con notas y próximo paso.
+5. Revisa **Dashboard**, **Jugadores**, **Investigación** y **Duplicados**.
+6. Exporta ZIP o Excel al terminar cada sesión.
+
+## Aviso sobre persistencia
+
+En Streamlit Cloud el almacenamiento local puede reiniciarse. Exporta el ZIP o Excel cuando termines y reimpórtalo cuando quieras continuar.
