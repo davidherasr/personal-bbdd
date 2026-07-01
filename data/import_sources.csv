@@ -1,0 +1,12 @@
+country,competition,level,code,url,type
+Inglaterra,Premier League,1ª,E0,https://www.football-data.co.uk/mmz4281/2526/E0.csv,partidos
+Inglaterra,Championship,2ª,E1,https://www.football-data.co.uk/mmz4281/2526/E1.csv,partidos
+Inglaterra,League One,3ª,E2,https://www.football-data.co.uk/mmz4281/2526/E2.csv,partidos
+España,LaLiga,1ª,SP1,https://www.football-data.co.uk/mmz4281/2526/SP1.csv,partidos
+España,LaLiga Hypermotion,2ª,SP2,https://www.football-data.co.uk/mmz4281/2526/SP2.csv,partidos
+Italia,Serie A,1ª,I1,https://www.football-data.co.uk/mmz4281/2526/I1.csv,partidos
+Italia,Serie B,2ª,I2,https://www.football-data.co.uk/mmz4281/2526/I2.csv,partidos
+Alemania,Bundesliga,1ª,D1,https://www.football-data.co.uk/mmz4281/2526/D1.csv,partidos
+Alemania,2. Bundesliga,2ª,D2,https://www.football-data.co.uk/mmz4281/2526/D2.csv,partidos
+Francia,Ligue 1,1ª,F1,https://www.football-data.co.uk/mmz4281/2526/F1.csv,partidos
+Francia,Ligue 2,2ª,F2,https://www.football-data.co.uk/mmz4281/2526/F2.csv,partidos

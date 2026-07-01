@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 import pandas as pd
 import streamlit as st
 
-APP_TITLE = "Scouting Hub v0.5"
+APP_TITLE = "Scouting Hub v0.7"
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -21,7 +21,22 @@ FOOTS = ["", "Derecha", "Izquierda", "Ambas"]
 PLAYER_STATUS = ["Sin valorar", "Seguir", "Revisar", "Prioritario", "Descartar", "Fichaje recomendado"]
 TEAM_TYPES = ["Club", "Selección"]
 SOURCE_TYPES = ["", "Partido completo", "Directo", "Torneo", "Recomendación", "Base de datos", "Vídeo", "Entrenador", "Otro"]
-PRIORITY_LABELS = ["A", "B", "C", "D"]
+PRIORITY_LABELS = ["A", "B+", "B", "C", "D"]
+
+ROLE_TYPES = [
+    "", "Portero constructor", "Portero dominador de área", "Central dominante", "Central corrector",
+    "Central de salida", "Lateral largo", "Lateral corto/interior", "Carrilero",
+    "Pivote posicional", "Pivote defensivo", "Interior ida y vuelta", "Interior creativo",
+    "Mediapunta libre", "Extremo abierto", "Extremo interior", "Segundo punta",
+    "Nueve referencia", "Nueve móvil", "Delantero presionante"
+]
+
+TACTICAL_FITS = ["", "Muy alto", "Alto", "Medio-alto", "Medio", "Bajo", "Muy bajo"]
+POSITION_NEED_LEVELS = ["", "Alta", "Media", "Baja"]
+RELIABILITY_LEVELS = ["", "Alta", "Media", "Baja"]
+TREND_LEVELS = ["", "Sube", "Mantiene", "Baja"]
+OPPOSITION_LEVELS = ["", "Muy alto", "Alto", "Medio", "Bajo"]
+MATCH_DIFFICULTIES = ["", "Muy alta", "Alta", "Media", "Baja"]
 
 SCHEMAS: Dict[str, List[str]] = {
     "countries": ["country_id", "name", "normalized_name", "created_at"],
@@ -33,7 +48,8 @@ SCHEMAS: Dict[str, List[str]] = {
     "players": [
         "player_id", "display_name", "normalized_name", "birth_date", "age", "nationality_id",
         "primary_position", "secondary_position", "dominant_foot", "height_cm", "current_team_id",
-        "status", "priority_manual", "potential", "source", "phone", "email", "test_sheet",
+        "status", "priority_manual", "potential", "primary_role", "secondary_role", "tactical_fit",
+        "position_need", "source", "phone", "email", "test_sheet",
         "entry_date", "entry_age", "tags", "general_notes", "created_at"
     ],
     "matches": [
@@ -43,7 +59,8 @@ SCHEMAS: Dict[str, List[str]] = {
     "observations": [
         "observation_id", "player_id", "match_id", "team_id", "observed_position", "minutes_observed",
         "role", "action_type", "minute_note", "positive_notes", "improvement_notes", "technical_rating",
-        "tactical_rating", "physical_rating", "mental_rating", "global_rating", "recommendation", "next_step", "created_at"
+        "tactical_rating", "physical_rating", "mental_rating", "global_rating", "recommendation",
+        "next_step", "viewing_type", "opposition_level", "match_difficulty", "reliability", "trend", "created_at"
     ],
     "aliases": ["alias_id", "player_id", "alias", "normalized_alias", "created_at"],
 }
@@ -73,6 +90,29 @@ SEED_COMPETITIONS = [
 LOCALITY_BANDS = [
     "", "Sin datos", "Pueblo / rural", "Ciudad pequeña", "Ciudad media", "Gran ciudad", "Cantera profesional", "Academia", "Selección"
 ]
+
+
+FOOTBALL_DATA_SOURCES = [
+    {"country": "Inglaterra", "competition": "Premier League", "level": "1ª", "code": "E0", "url": "https://www.football-data.co.uk/mmz4281/2526/E0.csv"},
+    {"country": "Inglaterra", "competition": "Championship", "level": "2ª", "code": "E1", "url": "https://www.football-data.co.uk/mmz4281/2526/E1.csv"},
+    {"country": "Inglaterra", "competition": "League One", "level": "3ª", "code": "E2", "url": "https://www.football-data.co.uk/mmz4281/2526/E2.csv"},
+    {"country": "España", "competition": "LaLiga", "level": "1ª", "code": "SP1", "url": "https://www.football-data.co.uk/mmz4281/2526/SP1.csv"},
+    {"country": "España", "competition": "LaLiga Hypermotion", "level": "2ª", "code": "SP2", "url": "https://www.football-data.co.uk/mmz4281/2526/SP2.csv"},
+    {"country": "Italia", "competition": "Serie A", "level": "1ª", "code": "I1", "url": "https://www.football-data.co.uk/mmz4281/2526/I1.csv"},
+    {"country": "Italia", "competition": "Serie B", "level": "2ª", "code": "I2", "url": "https://www.football-data.co.uk/mmz4281/2526/I2.csv"},
+    {"country": "Alemania", "competition": "Bundesliga", "level": "1ª", "code": "D1", "url": "https://www.football-data.co.uk/mmz4281/2526/D1.csv"},
+    {"country": "Alemania", "competition": "2. Bundesliga", "level": "2ª", "code": "D2", "url": "https://www.football-data.co.uk/mmz4281/2526/D2.csv"},
+    {"country": "Francia", "competition": "Ligue 1", "level": "1ª", "code": "F1", "url": "https://www.football-data.co.uk/mmz4281/2526/F1.csv"},
+    {"country": "Francia", "competition": "Ligue 2", "level": "2ª", "code": "F2", "url": "https://www.football-data.co.uk/mmz4281/2526/F2.csv"},
+]
+
+EXPECTED_PLAYER_COLUMNS = [
+    "country", "competition", "team", "player_name", "birth_date", "age", "nationality",
+    "primary_position", "secondary_position", "dominant_foot", "height_cm", "status", "potential",
+    "primary_role", "secondary_role", "tactical_fit", "position_need", "tags", "source"
+]
+EXPECTED_MATCH_COLUMNS = ["country", "competition", "season", "match_date", "home_team", "away_team", "matchday", "context"]
+EXPECTED_TEAM_COLUMNS = ["country", "competition", "team_type", "team", "locality", "locality_band"]
 
 
 def now_str() -> str:
@@ -244,6 +284,10 @@ def add_player(display_name: str, **kwargs) -> Tuple[str, bool, str]:
         "status": kwargs.get("status", "Sin valorar"),
         "priority_manual": kwargs.get("priority_manual", ""),
         "potential": kwargs.get("potential", ""),
+        "primary_role": kwargs.get("primary_role", ""),
+        "secondary_role": kwargs.get("secondary_role", ""),
+        "tactical_fit": kwargs.get("tactical_fit", ""),
+        "position_need": kwargs.get("position_need", ""),
         "source": kwargs.get("source", ""),
         "phone": kwargs.get("phone", ""),
         "email": kwargs.get("email", ""),
@@ -331,100 +375,248 @@ def to_num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce")
 
 
+
 def completeness_for_player(row: pd.Series, obs_count: int = 0) -> int:
     fields = [
-        "display_name", "age", "nationality_id", "primary_position", "dominant_foot", "height_cm",
-        "current_team_id", "status", "potential", "source", "tags", "general_notes"
+        "display_name", "age", "nationality_id", "primary_position", "primary_role", "dominant_foot", "height_cm",
+        "current_team_id", "status", "potential", "tactical_fit", "position_need", "source", "tags", "general_notes"
     ]
     filled = sum(1 for field in fields if str(row.get(field, "")).strip())
-    score = filled / len(fields) * 85
+    score = filled / len(fields) * 82
     if obs_count > 0:
-        score += 15
+        score += 12
+    if obs_count >= 2:
+        score += 6
     return int(round(min(100, score)))
 
 
-def priority_score(player: pd.Series, obs: pd.DataFrame) -> Tuple[int, str, List[str], str]:
-    score = 0
-    signals: List[str] = []
-    status = str(player.get("status", ""))
-    potential = str(player.get("potential", ""))
+POSITION_WEIGHTS: Dict[str, Dict[str, float]] = {
+    "POR": {"technical_rating": .20, "tactical_rating": .25, "physical_rating": .15, "mental_rating": .25, "global_rating": .15},
+    "DFC": {"technical_rating": .15, "tactical_rating": .30, "physical_rating": .20, "mental_rating": .20, "global_rating": .15},
+    "LD": {"technical_rating": .20, "tactical_rating": .25, "physical_rating": .25, "mental_rating": .15, "global_rating": .15},
+    "LI": {"technical_rating": .20, "tactical_rating": .25, "physical_rating": .25, "mental_rating": .15, "global_rating": .15},
+    "CAD": {"technical_rating": .22, "tactical_rating": .20, "physical_rating": .28, "mental_rating": .12, "global_rating": .18},
+    "CAI": {"technical_rating": .22, "tactical_rating": .20, "physical_rating": .28, "mental_rating": .12, "global_rating": .18},
+    "MCD": {"technical_rating": .20, "tactical_rating": .35, "physical_rating": .10, "mental_rating": .20, "global_rating": .15},
+    "MC": {"technical_rating": .25, "tactical_rating": .30, "physical_rating": .10, "mental_rating": .20, "global_rating": .15},
+    "MP": {"technical_rating": .30, "tactical_rating": .25, "physical_rating": .10, "mental_rating": .20, "global_rating": .15},
+    "ED": {"technical_rating": .30, "tactical_rating": .20, "physical_rating": .25, "mental_rating": .10, "global_rating": .15},
+    "EI": {"technical_rating": .30, "tactical_rating": .20, "physical_rating": .25, "mental_rating": .10, "global_rating": .15},
+    "SD": {"technical_rating": .27, "tactical_rating": .24, "physical_rating": .14, "mental_rating": .20, "global_rating": .15},
+    "DC": {"technical_rating": .25, "tactical_rating": .20, "physical_rating": .20, "mental_rating": .20, "global_rating": .15},
+}
+
+POTENTIAL_POINTS = {"Muy alto": 92, "Alto": 82, "Medio-alto": 70, "Medio": 56, "Bajo": 34, "Muy bajo": 20}
+FIT_POINTS = {"Muy alto": 92, "Alto": 80, "Medio-alto": 68, "Medio": 55, "Bajo": 35, "Muy bajo": 18}
+NEED_POINTS = {"Alta": 88, "Media": 62, "Baja": 38, "": 50}
+STATUS_URGENCY = {"Fichaje recomendado": 90, "Prioritario": 82, "Seguir": 66, "Revisar": 55, "Sin valorar": 45, "Descartar": 10}
+SOURCE_CONFIDENCE = {"Partido completo": 18, "Directo": 16, "Torneo": 13, "Vídeo": 11, "Base de datos": 7, "Recomendación": 6, "Entrenador": 8, "Otro": 4, "": 0}
+RELIABILITY_CONFIDENCE = {"Alta": 12, "Media": 7, "Baja": 2, "": 0}
+TREND_POINTS = {"Sube": 8, "Mantiene": 3, "Baja": -8, "": 0}
+
+
+def _mean_rating(obs: pd.DataFrame, col: str) -> float | None:
+    if obs.empty or col not in obs.columns:
+        return None
+    values = to_num(obs[col]).dropna()
+    if values.empty:
+        return None
+    return float(values.mean())
+
+
+def observed_level_score(player: pd.Series, obs: pd.DataFrame) -> int:
+    if obs.empty:
+        return 0
+    pos = str(player.get("primary_position", "")).strip() or str(obs.iloc[-1].get("observed_position", "")).strip()
+    weights = POSITION_WEIGHTS.get(pos, {"technical_rating": .25, "tactical_rating": .25, "physical_rating": .20, "mental_rating": .15, "global_rating": .15})
+    total_weight = 0.0
+    total = 0.0
+    for col, weight in weights.items():
+        val = _mean_rating(obs, col)
+        if val is not None:
+            total += val * 10 * weight
+            total_weight += weight
+    if total_weight == 0:
+        return 0
+    score = total / total_weight
+    # Tendencia reciente: las últimas observaciones pesan un poco más si la tendencia está marcada.
+    if "trend" in obs.columns:
+        recent_trends = [TREND_POINTS.get(str(x), 0) for x in obs["trend"].tail(3).tolist()]
+        score += sum(recent_trends) / max(1, len(recent_trends))
+    return int(round(max(0, min(100, score))))
+
+
+def potential_score(player: pd.Series) -> int:
+    potential = str(player.get("potential", "")).strip()
+    base = POTENTIAL_POINTS.get(potential, 50)
+    age = pd.to_numeric(pd.Series([player.get("age", "")]), errors="coerce").iloc[0]
+    if pd.notna(age):
+        if age <= 18:
+            base += 10
+        elif age <= 21:
+            base += 7
+        elif age <= 23:
+            base += 4
+        elif age >= 31:
+            base -= 10
     tags = normalize_text(player.get("tags", ""))
+    if any(word in tags for word in ["proyeccion", "sub-21", "sub21", "joven", "margen"]):
+        base += 6
+    if "techo bajo" in tags or "sin margen" in tags:
+        base -= 8
+    return int(round(max(0, min(100, base))))
 
-    status_points = {
-        "Fichaje recomendado": 30,
-        "Prioritario": 26,
-        "Seguir": 18,
-        "Revisar": 12,
-        "Sin valorar": 4,
-        "Descartar": -25,
-    }
-    score += status_points.get(status, 0)
-    if status:
-        signals.append(f"status: {status.lower()}")
 
-    if potential in ["Alto", "Muy alto"]:
-        score += 18 if potential == "Alto" else 24
-        signals.append(f"potencial {potential.lower()}")
-    elif potential == "Medio-alto":
-        score += 12
-        signals.append("potencial medio-alto")
+def fit_score(player: pd.Series) -> int:
+    base = FIT_POINTS.get(str(player.get("tactical_fit", "")).strip(), 50)
+    need = NEED_POINTS.get(str(player.get("position_need", "")).strip(), 50)
+    role_bonus = 8 if str(player.get("primary_role", "")).strip() else 0
+    tags = normalize_text(player.get("tags", ""))
+    if any(word in tags for word in ["encaje", "modelo", "presion", "posicional", "vertical", "rest defence", "rest-defense"]):
+        role_bonus += 5
+    if any(word in tags for word in ["no encaja", "duda tactica", "dudas tacticas"]):
+        role_bonus -= 10
+    score = base * .70 + need * .25 + role_bonus
+    return int(round(max(0, min(100, score))))
 
-    if not obs.empty:
-        g = to_num(obs["global_rating"]).dropna()
-        if not g.empty:
-            avg = float(g.mean())
-            score += int(avg * 4)
-            signals.append(f"nota media {avg:.1f}")
-        if len(obs) >= 2:
-            score += 8
-            signals.append("segunda observación")
-        else:
-            signals.append("falta segunda observación")
-    else:
-        signals.append("sin observaciones")
 
-    if str(player.get("age", "")).strip():
-        age = pd.to_numeric(pd.Series([player.get("age")]), errors="coerce").iloc[0]
-        if pd.notna(age) and 15 <= age <= 23:
-            score += 8
-            signals.append("edad interesante")
-
-    if "prioritario" in tags or "top" in tags or "diferencial" in tags:
-        score += 8
-        signals.append("etiqueta fuerte")
-    if "descartar" in tags:
-        score -= 15
-        signals.append("etiqueta negativa")
-
+def confidence_score(player: pd.Series, obs: pd.DataFrame) -> int:
     comp = completeness_for_player(player, len(obs))
-    if comp >= 70:
+    obs_count = len(obs)
+    minutes = to_num(obs["minutes_observed"]).fillna(0).sum() if not obs.empty and "minutes_observed" in obs.columns else 0
+    score = min(32, obs_count * 12)
+    score += min(25, float(minutes) / 180 * 25) if minutes else 0
+    score += comp * .28
+    score += SOURCE_CONFIDENCE.get(str(player.get("source", "")).strip(), 0)
+    if not obs.empty and "reliability" in obs.columns:
+        score += max([RELIABILITY_CONFIDENCE.get(str(x), 0) for x in obs["reliability"].tolist()] or [0])
+    if obs_count == 0:
+        score = min(score, 35)
+    elif obs_count == 1 and minutes < 60:
+        score = min(score, 55)
+    return int(round(max(0, min(100, score))))
+
+
+def urgency_score(player: pd.Series, obs: pd.DataFrame) -> int:
+    status = str(player.get("status", "")).strip()
+    score = STATUS_URGENCY.get(status, 45)
+    if len(obs) == 1:
         score += 8
-        signals.append("ficha completa")
-    elif comp < 35:
-        signals.append("ficha incompleta")
+    if len(obs) == 0:
+        score += 4
+    tags = normalize_text(player.get("tags", ""))
+    if any(word in tags for word in ["urgente", "mercado", "libre", "cesion", "prioritario"]):
+        score += 10
+    if "descartar" in tags or status == "Descartar":
+        score -= 35
+    return int(round(max(0, min(100, score))))
 
-    score = max(0, min(100, score))
-    manual = str(player.get("priority_manual", "")).strip()
-    if manual in PRIORITY_LABELS:
-        label = manual
-    elif score >= 80:
+
+def scoring_breakdown(player: pd.Series, obs: pd.DataFrame) -> Dict[str, object]:
+    level = observed_level_score(player, obs)
+    pot = potential_score(player)
+    fit = fit_score(player)
+    conf = confidence_score(player, obs)
+    urgency = urgency_score(player, obs)
+    if level == 0 and obs.empty:
+        # Sin observaciones: ranking de cartera, no de rendimiento.
+        base = pot * .36 + fit * .34 + urgency * .20 + completeness_for_player(player, 0) * .10
+    else:
+        base = level * .40 + pot * .25 + fit * .20 + urgency * .15
+    final = base * (0.70 + 0.30 * (conf / 100))
+
+    status = str(player.get("status", "")).strip()
+    if status == "Descartar":
+        final = min(final, 42)
+    if status == "Fichaje recomendado" and conf < 55:
+        final = min(final, 74)
+
+    label = "D"
+    if base >= 82 and conf < 50:
+        label = "B+"
+    elif final >= 80 and conf >= 65:
         label = "A"
-    elif score >= 60:
+    elif final >= 68:
         label = "B"
-    elif score >= 35:
+    elif final >= 50:
         label = "C"
-    else:
-        label = "D"
 
-    if label == "A":
-        next_step = "Informe largo o seguimiento prioritario"
-    elif label == "B":
-        next_step = "Segunda observación / revisar contexto"
-    elif label == "C":
-        next_step = "Mantener en base y completar datos"
+    manual = str(player.get("priority_manual", "")).strip()
+    # La prioridad manual se muestra como señal, pero no machaca el motor si no hay confianza.
+    if manual == "A" and conf >= 65 and final >= 70:
+        label = "A"
+    elif manual in ["B+", "B"] and final >= 55:
+        label = manual
+
+    positive: List[str] = []
+    alerts: List[str] = []
+    if level >= 75:
+        positive.append(f"nivel observado {level}")
+    if pot >= 78:
+        positive.append(f"potencial {pot}")
+    if fit >= 75:
+        positive.append(f"encaje {fit}")
+    if conf >= 70:
+        positive.append("evidencia sólida")
+    if len(obs) >= 2:
+        positive.append("2+ observaciones")
+    if status:
+        positive.append(f"estado: {status.lower()}")
+    if str(player.get("primary_role", "")).strip():
+        positive.append(f"rol: {str(player.get('primary_role')).lower()}")
+
+    if obs.empty:
+        alerts.append("sin observaciones")
+    elif len(obs) == 1:
+        alerts.append("solo una observación")
+    if conf < 45:
+        alerts.append("confianza baja")
+    if level >= 78 and conf < 55:
+        alerts.append("nota alta con poca muestra")
+    if completeness_for_player(player, len(obs)) < 50:
+        alerts.append("ficha incompleta")
+    if not str(player.get("primary_position", "")).strip():
+        alerts.append("sin posición")
+    if status == "Prioritario" and conf < 55:
+        alerts.append("prioritario sin evidencia suficiente")
+
+    if level >= 78 and conf >= 65:
+        next_step = "Informe largo / decisión fuerte"
+    elif level >= 75 and conf < 65:
+        next_step = "Segunda observación urgente"
+    elif pot >= 78 and conf < 55:
+        next_step = "Validar potencial con partido completo"
+    elif fit >= 75 and conf >= 50:
+        next_step = "Revisar encaje por rol y comparar por posición"
+    elif status == "Descartar" and conf >= 60:
+        next_step = "Descarte razonado"
+    elif conf < 40:
+        next_step = "Completar ficha antes de decidir"
     else:
-        next_step = "Baja prioridad o descartar si no mejora"
-    return score, label, signals[:6], next_step
+        next_step = "Seguimiento normal"
+
+    evidence = "Alta" if conf >= 70 else "Media" if conf >= 50 else "Baja"
+    return {
+        "observed_level": int(level),
+        "potential_score": int(pot),
+        "fit_score": int(fit),
+        "confidence_score": int(conf),
+        "urgency_score": int(urgency),
+        "priority_base": int(round(base)),
+        "priority_score": int(round(max(0, min(100, final)))),
+        "priority_label": label,
+        "evidence_level": evidence,
+        "signals": positive[:7],
+        "alerts": alerts[:7],
+        "next_step": next_step,
+    }
+
+
+def priority_score(player: pd.Series, obs: pd.DataFrame) -> Tuple[int, str, List[str], str]:
+    data = scoring_breakdown(player, obs)
+    signals = [str(x) for x in data.get("signals", [])]
+    alerts = [str(x) for x in data.get("alerts", [])]
+    return int(data["priority_score"]), str(data["priority_label"]), (signals + alerts)[:6], str(data["next_step"])
 
 
 def enrich_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -462,23 +654,47 @@ def enrich_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFr
     return teams_view, players_view, matches_view, observations_view, competitions
 
 
+
 def player_metrics_table(players_view: pd.DataFrame, observations_view: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for _, p in players_view.iterrows():
         obs = observations_view[observations_view["player_id"] == p["player_id"]]
-        score, label, signals, next_step = priority_score(p, obs)
-        ratings = to_num(obs["global_rating"]).dropna() if not obs.empty else pd.Series(dtype=float)
-        rows.append({
+        scoring = scoring_breakdown(p, obs)
+        ratings = to_num(obs["global_rating"]).dropna() if not obs.empty and "global_rating" in obs.columns else pd.Series(dtype=float)
+        row = {
             **p.to_dict(),
             "observations_count": len(obs),
+            "minutes_total": int(to_num(obs["minutes_observed"]).fillna(0).sum()) if not obs.empty and "minutes_observed" in obs.columns else 0,
             "avg_global": round(float(ratings.mean()), 2) if not ratings.empty else "",
             "completion": completeness_for_player(p, len(obs)),
-            "priority_score": score,
-            "priority_label": label,
-            "signals": ", ".join(signals),
-            "next_step_calc": next_step,
-        })
+            **scoring,
+            "signals_text": ", ".join(scoring.get("signals", [])),
+            "alerts_text": ", ".join(scoring.get("alerts", [])),
+            "next_step_calc": scoring.get("next_step", ""),
+        }
+        rows.append(row)
     return pd.DataFrame(rows)
+
+
+def score_card(title: str, value: object, subtitle: str = "", tone: str = "") -> None:
+    cls = "mini-card"
+    if tone:
+        cls += f" {tone}"
+    st.markdown(
+        f"""<div class=\"{cls}\"><div class=\"title\">{safe(title)}</div><div class=\"main\">{safe(value)}</div><div class=\"sub\">{safe(subtitle)}</div></div>""",
+        unsafe_allow_html=True,
+    )
+
+
+def score_bar(label: str, value: int, hint: str = "") -> str:
+    value = int(max(0, min(100, value)))
+    return f"""
+    <div class="score-row">
+      <div class="score-head"><span>{safe(label)}</span><strong>{value}/100</strong></div>
+      <div class="score-track"><div class="score-fill" style="width:{value}%"></div></div>
+      <div class="score-hint">{safe(hint)}</div>
+    </div>
+    """
 
 
 def inject_css() -> None:
@@ -518,6 +734,15 @@ def inject_css() -> None:
         .pos-dot { position:absolute; transform:translate(-50%,-50%); min-width:70px; height:52px; border-radius:16px; background:white; border:1px solid #d9dee8; box-shadow:0 8px 20px rgba(0,0,0,.10); display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:800; color:#111827; }
         .pos-dot span { font-size:12px; color:#6b7280; font-weight:700; }
         @media (max-width: 900px) { .kpi-grid{grid-template-columns:repeat(2,1fr);} .card-grid{grid-template-columns:1fr;} .hero h1{font-size:34px;} }
+        
+        .score-row { margin: 10px 0 14px 0; }
+        .score-head { display:flex; justify-content:space-between; color:#111827; font-size:14px; margin-bottom:6px; }
+        .score-track { height:10px; border-radius:999px; background:#eef2f7; overflow:hidden; border:1px solid #e5e7eb; }
+        .score-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#213766,#4f8b5f); }
+        .score-hint { color:#6b7280; font-size:12px; margin-top:4px; }
+        .rank-badge { display:inline-flex; align-items:center; justify-content:center; min-width:44px; height:34px; padding:0 12px; border-radius:999px; border:1px solid #decf78; background:#fffbe6; color:#8a650d; font-weight:900; }
+        .alert-chip { display:inline-block; border:1px solid #fecaca; border-radius:999px; padding:6px 10px; background:#fff1f2; color:#991b1b; margin:3px; font-size:13px; }
+        .good-chip { display:inline-block; border:1px solid #bbf7d0; border-radius:999px; padding:6px 10px; background:#f0fdf4; color:#166534; margin:3px; font-size:13px; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -696,7 +921,7 @@ def page_dashboard() -> None:
         ("Equipos / selecciones", str(len(teams_view)), ""),
         ("Partidos", str(len(matches_view)), ""),
         ("Observaciones", str(len(observations_view)), "good"),
-        ("Prioridades A/B", str(int(metrics["priority_label"].isin(["A", "B"]).sum())) if not metrics.empty else "0", "warn"),
+        ("Prioridades A/B+", str(int(metrics["priority_label"].isin(["A", "B+", "B"]).sum())) if not metrics.empty else "0", "warn"),
         ("Edad media", f"{avg_age:.1f}" if pd.notna(avg_age) else "—", ""),
         ("Nota media", f"{avg_global:.1f}" if pd.notna(avg_global) else "—", ""),
         ("Completitud media", f"{avg_completion}%", "good" if avg_completion >= 60 else "warn"),
@@ -708,7 +933,7 @@ def page_dashboard() -> None:
             st.markdown("### Prioridades actuales")
             prio = metrics.sort_values(["priority_score", "observations_count"], ascending=False).head(12)
             st.dataframe(
-                prio[["display_name", "current_team", "primary_position", "status", "avg_global", "priority_label", "priority_score", "completion", "next_step_calc"]],
+                prio[["display_name", "current_team", "primary_position", "primary_role", "priority_label", "priority_score", "observed_level", "potential_score", "fit_score", "confidence_score", "next_step_calc"]],
                 use_container_width=True,
             )
         else:
@@ -717,7 +942,7 @@ def page_dashboard() -> None:
         st.markdown(
             """
             <div class="panel"><h3>Modelo de trabajo</h3>
-            <p>La prioridad combina estado, potencial, nota media, número de observaciones, edad, completitud y etiquetas.</p></div>
+            <p>La prioridad separa nivel observado, potencial, encaje, urgencia y confianza para evitar mezclar rendimiento con intuición.</p></div>
             <div class="panel"><h3>Siguiente nivel</h3>
             <p>Cuantas más observaciones y datos añadas, más útil será el scoring para decidir seguimiento, informe o descarte.</p></div>
             """,
@@ -791,6 +1016,11 @@ def page_guided_flow() -> None:
             status = c6.selectbox("Estado", PLAYER_STATUS)
             potential = c7.selectbox("Potencial", ["", "Bajo", "Medio", "Medio-alto", "Alto", "Muy alto"])
             priority_manual = c8.selectbox("Prioridad manual", [""] + PRIORITY_LABELS)
+            c9, c10, c11 = st.columns(3)
+            primary_role = c9.selectbox("Rol principal", ROLE_TYPES)
+            tactical_fit = c10.selectbox("Encaje táctico", TACTICAL_FITS)
+            position_need = c11.selectbox("Necesidad posicional", POSITION_NEED_LEVELS)
+            secondary_role = st.selectbox("Rol secundario", ROLE_TYPES, key="new_player_secondary_role")
             source = st.selectbox("Fuente", SOURCE_TYPES)
             tags = st.text_input("Etiquetas", placeholder="Sub-21, físico top, diferencial, revisar...")
             notes = st.text_area("Notas generales")
@@ -802,7 +1032,8 @@ def page_guided_flow() -> None:
                     pid, created, msg = add_player(
                         name, nationality_id=country_id, primary_position=primary, secondary_position=secondary,
                         dominant_foot=foot, age=age, height_cm=height, current_team_id=team_id,
-                        status=status, priority_manual=priority_manual, potential=potential, source=source,
+                        status=status, priority_manual=priority_manual, potential=potential, primary_role=primary_role,
+                        secondary_role=secondary_role, tactical_fit=tactical_fit, position_need=position_need, source=source,
                         tags=tags, general_notes=notes, entry_date=str(date.today()), entry_age=age,
                     )
                     st.success(msg) if created else st.info(msg)
@@ -838,6 +1069,12 @@ def page_guided_flow() -> None:
             observed_pos = c1.selectbox("Posición observada", [""] + POSITIONS)
             minutes = c2.text_input("Minutos vistos", placeholder="90, 45, 20...")
             action_type = c3.selectbox("Tipo", ["Informe global", "Acción puntual", "ABP", "Transición", "Duelos", "Con balón", "Sin balón"])
+            v1, v2, v3, v4 = st.columns(4)
+            viewing_type = v1.selectbox("Tipo de visionado", SOURCE_TYPES)
+            opposition_level = v2.selectbox("Nivel rival", OPPOSITION_LEVELS)
+            match_difficulty = v3.selectbox("Dificultad partido", MATCH_DIFFICULTIES)
+            reliability = v4.selectbox("Fiabilidad", RELIABILITY_LEVELS)
+            trend = st.selectbox("Tendencia", TREND_LEVELS, help="Sube/mantiene/baja respecto a observaciones previas.")
             role = st.text_input("Rol observado", placeholder="Extremo abierto, central corrector, pivote posicional...")
             minute_note = st.text_input("Minuto / contexto", placeholder="Min 23, primera parte, tras pérdida...")
             pos_notes = st.text_area("Notas positivas")
@@ -857,6 +1094,8 @@ def page_guided_flow() -> None:
                     minute_note=minute_note, positive_notes=pos_notes, improvement_notes=imp_notes,
                     technical_rating=str(technical), tactical_rating=str(tactical), physical_rating=str(physical),
                     mental_rating=str(mental), global_rating=str(global_rating), recommendation=recommendation, next_step=next_step,
+                    viewing_type=viewing_type, opposition_level=opposition_level, match_difficulty=match_difficulty,
+                    reliability=reliability, trend=trend,
                 )
                 st.success(msg) if created else st.error(msg)
 
@@ -912,8 +1151,9 @@ def page_matches() -> None:
     st.dataframe(matches_view[["match_id", "match_date", "match_name", "competition", "home_team", "away_team", "season", "context"]], use_container_width=True)
 
 
+
 def page_players() -> None:
-    hero("Jugadores", "Base individual con ficha, scoring automático, señales de prioridad y observaciones acumuladas.", "Catálogo", "Ficha")
+    hero("Jugadores", "Ficha individual con desglose del motor de ranking: nivel observado, potencial, encaje, confianza y prioridad final.", "Base", "Scoring")
     _, players_view, _, observations_view, _ = enrich_tables()
     if players_view.empty:
         st.warning("Todavía no hay jugadores.")
@@ -933,10 +1173,12 @@ def page_players() -> None:
         df = df[df["priority_label"].isin(priority_filter)]
     if search:
         df = df[df["display_name"].str.contains(search, case=False, na=False)]
-    st.dataframe(
-        df[["player_id", "display_name", "current_team", "nationality", "primary_position", "age", "status", "potential", "priority_label", "priority_score", "completion", "observations_count", "avg_global"]],
-        use_container_width=True,
-    )
+    display_cols = [
+        "player_id", "display_name", "current_team", "primary_position", "primary_role", "age",
+        "priority_label", "priority_score", "observed_level", "potential_score", "fit_score",
+        "confidence_score", "observations_count", "next_step_calc"
+    ]
+    st.dataframe(df[[c for c in display_cols if c in df.columns]].sort_values(["priority_score", "confidence_score"], ascending=False), use_container_width=True)
 
     st.subheader("Ficha individual")
     options = [""] + metrics["player_id"].tolist()
@@ -947,39 +1189,146 @@ def page_players() -> None:
         return
     player = metrics[metrics["player_id"] == pid].iloc[0]
     obs = observations_view[observations_view["player_id"] == pid]
-    score, label, signals, next_step = priority_score(player, obs)
+    scoring = scoring_breakdown(player, obs)
+
     st.markdown(
         f"""
         <div class="panel">
           <div class="card-grid">
-            <div class="mini-card"><div class="title">Jugador</div><div class="main">{safe(player['display_name'])}</div><div class="sub">{safe(player.get('primary_position',''))} · {safe(player.get('current_team',''))}</div></div>
-            <div class="mini-card"><div class="title">Prioridad scouting</div><div class="main"><span class="priority-badge">{label}</span> {score}/100</div><div class="sub">{safe(next_step)}</div></div>
-            <div class="mini-card"><div class="title">Completitud</div><div class="main">{int(player['completion'])}%</div><div class="sub">datos + observaciones</div></div>
-            <div class="mini-card"><div class="title">Edad / entrada</div><div class="main">{safe(player.get('age','—'))}</div><div class="sub">entrada: {safe(player.get('entry_age',''))}</div></div>
-            <div class="mini-card"><div class="title">Contacto</div><div class="main">{safe(player.get('phone','Brak') or 'Sin teléfono')}</div><div class="sub">{safe(player.get('email','Sin email') or 'Sin email')}</div></div>
-            <div class="mini-card"><div class="title">Hoja de tests</div><div class="main">{safe(player.get('test_sheet','Sin tests') or 'Sin tests')}</div><div class="sub">fuente: {safe(player.get('source',''))}</div></div>
+            <div class="mini-card"><div class="title">Jugador</div><div class="main">{safe(player['display_name'])}</div><div class="sub">{safe(player.get('primary_position',''))} · {safe(player.get('primary_role',''))}</div></div>
+            <div class="mini-card"><div class="title">Prioridad final</div><div class="main"><span class="rank-badge">{safe(scoring['priority_label'])}</span> {safe(scoring['priority_score'])}/100</div><div class="sub">{safe(scoring['next_step'])}</div></div>
+            <div class="mini-card"><div class="title">Evidencia</div><div class="main">{safe(scoring['evidence_level'])}</div><div class="sub">confianza {safe(scoring['confidence_score'])}/100 · {safe(player.get('observations_count', 0))} obs.</div></div>
+            <div class="mini-card"><div class="title">Equipo</div><div class="main">{safe(player.get('current_team',''))}</div><div class="sub">{safe(player.get('nationality',''))} · edad {safe(player.get('age','—'))}</div></div>
+            <div class="mini-card"><div class="title">Encaje</div><div class="main">{safe(player.get('tactical_fit','Sin valorar') or 'Sin valorar')}</div><div class="sub">necesidad: {safe(player.get('position_need',''))}</div></div>
+            <div class="mini-card"><div class="title">Completitud</div><div class="main">{int(player['completion'])}%</div><div class="sub">datos, rol, fuente y observaciones</div></div>
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("**Señales del scoring:** " + " ".join([f"<span class='chip'>{safe(s)}</span>" for s in signals]), unsafe_allow_html=True)
+    bars = "".join([
+        score_bar("Nivel observado", scoring["observed_level"], "rendimiento ponderado por posición"),
+        score_bar("Potencial", scoring["potential_score"], "edad, potencial manual, margen y etiquetas"),
+        score_bar("Encaje", scoring["fit_score"], "rol, encaje táctico y necesidad posicional"),
+        score_bar("Confianza", scoring["confidence_score"], "observaciones, minutos, fuente y completitud"),
+        score_bar("Urgencia", scoring["urgency_score"], "estado de seguimiento y señales de mercado"),
+        score_bar("Prioridad base", scoring["priority_base"], "sin modular por confianza"),
+    ])
+    st.markdown(f"<div class='panel'><h3>Desglose del ranking</h3>{bars}</div>", unsafe_allow_html=True)
+
+    positives = scoring.get("signals", [])
+    alerts = scoring.get("alerts", [])
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### Señales positivas")
+        if positives:
+            st.markdown(" ".join([f"<span class='good-chip'>{safe(s)}</span>" for s in positives]), unsafe_allow_html=True)
+        else:
+            st.write("Sin señales positivas fuertes todavía.")
+    with col2:
+        st.markdown("### Alertas")
+        if alerts:
+            st.markdown(" ".join([f"<span class='alert-chip'>{safe(s)}</span>" for s in alerts]), unsafe_allow_html=True)
+        else:
+            st.write("Sin alertas relevantes.")
+
     st.write("**Notas generales:**", player.get("general_notes", ""))
     if not obs.empty:
         st.subheader("Observaciones acumuladas")
-        st.dataframe(obs[["created_at", "match", "observed_position", "role", "action_type", "global_rating", "recommendation", "next_step", "positive_notes", "improvement_notes"]], use_container_width=True)
+        obs_cols = ["created_at", "match", "observed_position", "role", "viewing_type", "minutes_observed", "global_rating", "reliability", "trend", "recommendation", "next_step", "positive_notes", "improvement_notes"]
+        st.dataframe(obs[[c for c in obs_cols if c in obs.columns]], use_container_width=True)
         report = f"# Informe rápido - {player['display_name']}\n\n"
-        report += f"Equipo: {player.get('current_team','')}\nPosición: {player.get('primary_position','')}\nPrioridad: {label} ({score}/100)\nEstado: {player.get('status','')}\n\n"
-        report += f"Señales: {', '.join(signals)}\nPróximo paso: {next_step}\n\n"
+        report += f"Equipo: {player.get('current_team','')}\nPosición: {player.get('primary_position','')}\nRol: {player.get('primary_role','')}\n"
+        report += f"Prioridad: {scoring['priority_label']} ({scoring['priority_score']}/100)\n"
+        report += f"Nivel: {scoring['observed_level']} · Potencial: {scoring['potential_score']} · Encaje: {scoring['fit_score']} · Confianza: {scoring['confidence_score']}\n"
+        report += f"Próximo paso: {scoring['next_step']}\nSeñales: {', '.join(positives)}\nAlertas: {', '.join(alerts)}\n\n"
         for _, r in obs.iterrows():
             report += f"## {r.get('match','Sin partido')} · {r.get('created_at','')}\n"
-            report += f"Posición: {r.get('observed_position','')} · Rol: {r.get('role','')} · Nota: {r.get('global_rating','')}\n"
-            report += f"Positivo: {r.get('positive_notes','')}\n"
-            report += f"Mejora/dudas: {r.get('improvement_notes','')}\n"
-            report += f"Próximo paso: {r.get('next_step','')}\n\n"
+            report += f"Posición: {r.get('observed_position','')} · Rol: {r.get('role','')} · Nota: {r.get('global_rating','')} · Fiabilidad: {r.get('reliability','')}\n"
+            report += f"Positivo: {r.get('positive_notes','')}\nMejora/dudas: {r.get('improvement_notes','')}\nPróximo paso: {r.get('next_step','')}\n\n"
         st.download_button("Descargar informe TXT", report.encode("utf-8"), file_name=f"informe_{normalize_text(player['display_name']).replace(' ','_')}.txt")
     else:
         st.info("Este jugador todavía no tiene observaciones.")
+
+
+
+def page_rankings() -> None:
+    hero("Rankings", "Motor de decisión separado por nivel, potencial, encaje, confianza y prioridad. El objetivo no es solo ordenar jugadores, sino decir qué toca hacer con cada uno.", "Scoring", "Decisión")
+    teams_view, players_view, _, observations_view, competitions = enrich_tables()
+    if players_view.empty:
+        st.warning("No hay jugadores para rankear.")
+        return
+    metrics = player_metrics_table(players_view, observations_view)
+    c1, c2, c3, c4 = st.columns(4)
+    pos = c1.multiselect("Posición", POSITIONS)
+    role = c2.multiselect("Rol", [r for r in ROLE_TYPES if r])
+    label = c3.multiselect("Prioridad", PRIORITY_LABELS)
+    min_conf = c4.slider("Confianza mínima", 0, 100, 0, 5)
+    c5, c6, c7, c8 = st.columns(4)
+    status = c5.multiselect("Estado", PLAYER_STATUS)
+    country = c6.multiselect("Nacionalidad", sorted([x for x in metrics["nationality"].dropna().unique().tolist() if x])) if "nationality" in metrics.columns else []
+    max_age = c7.slider("Edad máxima", 0, 45, 45)
+    min_obs = c8.slider("Observaciones mínimas", 0, 5, 0)
+
+    df = metrics.copy()
+    if pos:
+        df = df[df["primary_position"].isin(pos)]
+    if role and "primary_role" in df.columns:
+        df = df[df["primary_role"].isin(role)]
+    if label:
+        df = df[df["priority_label"].isin(label)]
+    if status:
+        df = df[df["status"].isin(status)]
+    if country and "nationality" in df.columns:
+        df = df[df["nationality"].isin(country)]
+    if max_age < 45:
+        ages = pd.to_numeric(df["age"], errors="coerce")
+        df = df[(ages <= max_age) | ages.isna()]
+    df = df[(pd.to_numeric(df["confidence_score"], errors="coerce").fillna(0) >= min_conf) & (pd.to_numeric(df["observations_count"], errors="coerce").fillna(0) >= min_obs)]
+
+    if df.empty:
+        st.info("No hay jugadores con esos filtros.")
+        return
+
+    base_cols = ["display_name", "current_team", "primary_position", "primary_role", "age", "priority_label", "priority_score", "observed_level", "potential_score", "fit_score", "confidence_score", "observations_count", "next_step_calc", "alerts_text"]
+    tabs = st.tabs(["Prioridad", "Nivel observado", "Potencial", "Encaje", "Confianza", "2ª observación", "Alertas"])
+    with tabs[0]:
+        st.dataframe(df.sort_values(["priority_score", "confidence_score"], ascending=False)[[c for c in base_cols if c in df.columns]].head(150), use_container_width=True)
+    with tabs[1]:
+        st.caption("Ranking de rendimiento: lo que el jugador ha demostrado en observaciones, ponderado por posición.")
+        st.dataframe(df.sort_values(["observed_level", "confidence_score"], ascending=False)[[c for c in base_cols if c in df.columns]].head(150), use_container_width=True)
+    with tabs[2]:
+        st.caption("Ranking de proyección: edad, potencial manual y señales de margen.")
+        st.dataframe(df.sort_values(["potential_score", "confidence_score"], ascending=False)[[c for c in base_cols if c in df.columns]].head(150), use_container_width=True)
+    with tabs[3]:
+        st.caption("Ranking de encaje: rol, necesidad posicional y compatibilidad táctica.")
+        st.dataframe(df.sort_values(["fit_score", "confidence_score"], ascending=False)[[c for c in base_cols if c in df.columns]].head(150), use_container_width=True)
+    with tabs[4]:
+        st.caption("Ranking de confianza: quién tiene datos suficientes para decidir.")
+        st.dataframe(df.sort_values(["confidence_score", "observations_count"], ascending=False)[[c for c in base_cols if c in df.columns]].head(150), use_container_width=True)
+    with tabs[5]:
+        target = df[(pd.to_numeric(df["observed_level"], errors="coerce").fillna(0) >= 70) & (pd.to_numeric(df["confidence_score"], errors="coerce").fillna(0) < 65)]
+        st.caption("Jugadores que han dado señal, pero todavía no tienen evidencia suficiente.")
+        st.dataframe(target.sort_values(["observed_level", "priority_base"], ascending=False)[[c for c in base_cols if c in target.columns]].head(150), use_container_width=True)
+    with tabs[6]:
+        alert_df = df[df["alerts_text"].astype(str).str.len() > 0]
+        st.caption("Alta nota con baja confianza, prioritarios sin evidencia, fichas incompletas, jugadores sin observaciones.")
+        st.dataframe(alert_df.sort_values(["priority_score", "confidence_score"], ascending=[False, True])[[c for c in base_cols if c in alert_df.columns]].head(150), use_container_width=True)
+
+    st.markdown("### Matriz de decisión")
+    st.markdown(
+        """
+        <div class="panel"><div class="card-grid">
+          <div class="mini-card"><div class="main">Nivel alto + confianza alta</div><div class="sub">Informe largo, decisión fuerte o prioridad A.</div></div>
+          <div class="mini-card"><div class="main">Nivel alto + confianza baja</div><div class="sub">Segunda observación urgente, no venderlo como certeza.</div></div>
+          <div class="mini-card"><div class="main">Nivel medio + confianza alta</div><div class="sub">Seguimiento normal, comparación por rol y posición.</div></div>
+          <div class="mini-card"><div class="main">Nivel bajo + confianza alta</div><div class="sub">Descarte razonado o archivo frío.</div></div>
+          <div class="mini-card"><div class="main">Potencial alto + sin muestra</div><div class="sub">Programar visionado completo antes de subirlo a A/B.</div></div>
+          <div class="mini-card"><div class="main">Encaje alto + datos incompletos</div><div class="sub">Completar ficha y validar rol exacto.</div></div>
+        </div></div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def page_research() -> None:
@@ -1076,39 +1425,39 @@ def page_duplicate_center() -> None:
         st.success("Alias guardado.")
 
 
+
 def page_pitch_and_compare() -> None:
-    hero("Campograma y comparador", "Vista posicional sin dependencias externas y comparación rápida de dos jugadores por métricas acumuladas.", "Visual", "Comparativa")
+    hero("Campograma y comparador", "Vista posicional sin dependencias externas y comparación rápida por el nuevo motor de scoring.", "Visual", "Comparativa")
     _, players_view, _, observations_view, _ = enrich_tables()
     if players_view.empty:
         st.warning("No hay jugadores.")
         return
+    metrics = player_metrics_table(players_view, observations_view)
     st.subheader("Campograma por posición principal")
-    render_pitch(players_view)
+    render_pitch(metrics)
 
     st.subheader("Comparador")
-    options = players_view["player_id"].tolist()
-    labels = dict(zip(players_view["player_id"], players_view["display_name"]))
+    options = metrics["player_id"].tolist()
+    labels = dict(zip(metrics["player_id"], metrics["display_name"]))
     c1, c2 = st.columns(2)
     p1 = c1.selectbox("Jugador A", options, format_func=lambda x: labels.get(x, x), key="comp_a")
     p2 = c2.selectbox("Jugador B", options, format_func=lambda x: labels.get(x, x), key="comp_b")
     rows = []
     for pid in [p1, p2]:
-        obs = observations_view[observations_view["player_id"] == pid]
-        player = players_view[players_view["player_id"] == pid].iloc[0]
-        score, label, _, next_step = priority_score(player, obs)
+        player = metrics[metrics["player_id"] == pid].iloc[0]
         rows.append({
             "Jugador": player["display_name"],
             "Equipo": player.get("current_team", ""),
             "Posición": player.get("primary_position", ""),
-            "Observaciones": len(obs),
-            "Técnica": round(to_num(obs["technical_rating"]).mean(), 2) if not obs.empty else "",
-            "Táctica": round(to_num(obs["tactical_rating"]).mean(), 2) if not obs.empty else "",
-            "Físico": round(to_num(obs["physical_rating"]).mean(), 2) if not obs.empty else "",
-            "Mental": round(to_num(obs["mental_rating"]).mean(), 2) if not obs.empty else "",
-            "Global": round(to_num(obs["global_rating"]).mean(), 2) if not obs.empty else "",
-            "Prioridad": label,
-            "Score": score,
-            "Próximo paso": next_step,
+            "Rol": player.get("primary_role", ""),
+            "Observaciones": player.get("observations_count", 0),
+            "Nivel": player.get("observed_level", 0),
+            "Potencial": player.get("potential_score", 0),
+            "Encaje": player.get("fit_score", 0),
+            "Confianza": player.get("confidence_score", 0),
+            "Prioridad": f"{player.get('priority_label','')} · {player.get('priority_score','')}/100",
+            "Próximo paso": player.get("next_step_calc", ""),
+            "Alertas": player.get("alerts_text", ""),
         })
     st.dataframe(pd.DataFrame(rows), use_container_width=True)
 
@@ -1128,6 +1477,244 @@ def page_data_editor() -> None:
         save_table(table, edited)
         st.success("Cambios guardados.")
 
+
+
+def get_or_create_country(name: str) -> str:
+    cid, _, _ = add_country(str(name or "").strip())
+    return cid
+
+
+def get_or_create_competition(name: str, country_id: str, level: str = "", season: str = "2025/26") -> str:
+    cid, _, _ = add_competition(str(name or "").strip(), country_id, level, season)
+    return cid
+
+
+def get_or_create_team(name: str, team_type: str, country_id: str, competition_id: str = "", locality: str = "", locality_band: str = "") -> str:
+    tid, created, _ = add_team(str(name or "").strip(), team_type, country_id, competition_id)
+    if tid and (locality or locality_band):
+        teams = load_table("teams")
+        mask = teams["team_id"] == tid
+        if locality:
+            teams.loc[mask, "locality"] = locality
+        if locality_band:
+            teams.loc[mask, "locality_band"] = locality_band
+        save_table("teams", teams)
+    return tid
+
+
+def import_teams_dataframe(raw: pd.DataFrame) -> Tuple[int, int]:
+    created_or_seen = 0
+    errors = 0
+    for _, row in raw.fillna("").iterrows():
+        try:
+            country = str(row.get("country", "")).strip()
+            competition = str(row.get("competition", "")).strip()
+            team = str(row.get("team", "")).strip()
+            team_type = str(row.get("team_type", "Club") or "Club").strip()
+            if not country or not team:
+                errors += 1
+                continue
+            country_id = get_or_create_country(country)
+            competition_id = get_or_create_competition(competition, country_id, "", "2025/26") if competition else ""
+            get_or_create_team(team, team_type, country_id, competition_id, str(row.get("locality", "")), str(row.get("locality_band", "")))
+            created_or_seen += 1
+        except Exception:
+            errors += 1
+    return created_or_seen, errors
+
+
+def import_players_dataframe(raw: pd.DataFrame) -> Tuple[int, int, int]:
+    created = 0
+    skipped = 0
+    errors = 0
+    for _, row in raw.fillna("").iterrows():
+        try:
+            country = str(row.get("country", "")).strip()
+            competition = str(row.get("competition", "")).strip()
+            team = str(row.get("team", "")).strip()
+            player_name = str(row.get("player_name", "")).strip()
+            if not player_name or not team or not country:
+                errors += 1
+                continue
+            country_id = get_or_create_country(country)
+            competition_id = get_or_create_competition(competition, country_id, "", "2025/26") if competition else ""
+            team_id = get_or_create_team(team, "Club", country_id, competition_id)
+            nat_name = str(row.get("nationality", "")).strip() or country
+            nationality_id = get_or_create_country(nat_name)
+            _, was_created, _ = add_player(
+                player_name,
+                birth_date=str(row.get("birth_date", "")),
+                age=str(row.get("age", "")),
+                nationality_id=nationality_id,
+                primary_position=str(row.get("primary_position", "")),
+                secondary_position=str(row.get("secondary_position", "")),
+                dominant_foot=str(row.get("dominant_foot", "")),
+                height_cm=str(row.get("height_cm", "")),
+                current_team_id=team_id,
+                status=str(row.get("status", "Sin valorar") or "Sin valorar"),
+                potential=str(row.get("potential", "")),
+                primary_role=str(row.get("primary_role", "")),
+                secondary_role=str(row.get("secondary_role", "")),
+                tactical_fit=str(row.get("tactical_fit", "")),
+                position_need=str(row.get("position_need", "")),
+                tags=str(row.get("tags", "")),
+                source=str(row.get("source", "Importación CSV") or "Importación CSV"),
+            )
+            created += int(was_created)
+            skipped += int(not was_created)
+        except Exception:
+            errors += 1
+    return created, skipped, errors
+
+
+def import_matches_dataframe(raw: pd.DataFrame) -> Tuple[int, int, int]:
+    created = 0
+    skipped = 0
+    errors = 0
+    for _, row in raw.fillna("").iterrows():
+        try:
+            country = str(row.get("country", "")).strip()
+            competition = str(row.get("competition", "")).strip()
+            season = str(row.get("season", "2025/26") or "2025/26")
+            match_date = str(row.get("match_date", "")).strip()
+            home_team = str(row.get("home_team", "")).strip()
+            away_team = str(row.get("away_team", "")).strip()
+            if not country or not competition or not match_date or not home_team or not away_team:
+                errors += 1
+                continue
+            country_id = get_or_create_country(country)
+            competition_id = get_or_create_competition(competition, country_id, "", season)
+            home_id = get_or_create_team(home_team, "Club", country_id, competition_id)
+            away_id = get_or_create_team(away_team, "Club", country_id, competition_id)
+            context_parts = []
+            if str(row.get("matchday", "")).strip():
+                context_parts.append(f"Jornada {row.get('matchday')}")
+            if str(row.get("context", "")).strip():
+                context_parts.append(str(row.get("context")))
+            mid, was_created, _ = add_match(match_date, f"{home_team} - {away_team}", competition_id, home_id, away_id, season, " · ".join(context_parts))
+            created += int(was_created)
+            skipped += int(not was_created)
+        except Exception:
+            errors += 1
+    return created, skipped, errors
+
+
+def football_data_to_matches_df(fd_df: pd.DataFrame, source: dict) -> pd.DataFrame:
+    rows = []
+    for _, r in fd_df.fillna("").iterrows():
+        if not str(r.get("HomeTeam", "")).strip() or not str(r.get("AwayTeam", "")).strip():
+            continue
+        raw_date = str(r.get("Date", "")).strip()
+        parsed = pd.to_datetime(raw_date, dayfirst=True, errors="coerce")
+        match_date = parsed.strftime("%Y-%m-%d") if not pd.isna(parsed) else raw_date
+        result = ""
+        if str(r.get("FTHG", "")).strip() != "" and str(r.get("FTAG", "")).strip() != "":
+            result = f"Resultado: {r.get('FTHG')}-{r.get('FTAG')}"
+        rows.append({
+            "country": source["country"],
+            "competition": source["competition"],
+            "season": "2025/26",
+            "match_date": match_date,
+            "home_team": r.get("HomeTeam", ""),
+            "away_team": r.get("AwayTeam", ""),
+            "matchday": "",
+            "context": f"Importado Football-Data.co.uk {source['code']}" + (f" · {result}" if result else ""),
+        })
+    return pd.DataFrame(rows, columns=EXPECTED_MATCH_COLUMNS)
+
+
+def template_bytes(columns: List[str]) -> bytes:
+    sample = pd.DataFrame([{col: "" for col in columns}])
+    return sample.to_csv(index=False).encode("utf-8-sig")
+
+
+def page_mass_importer() -> None:
+    hero("Importador masivo", "Importa partidos, equipos y plantillas en bloque sin romper la base: valida, normaliza, evita duplicados y crea países/ligas/equipos si faltan.", "v0.6", "Masivo")
+    st.warning("Para jugadores completos de todas las ligas, lo más fiable es cargar CSV de plantillas por fuente. La app evita duplicados por nombre normalizado, pero conviene revisar equipos y nacionalidades después.")
+    tab1, tab2, tab3 = st.tabs(["Partidos Football-Data", "CSV universal", "Plantillas vacías"])
+
+    with tab1:
+        st.subheader("Importar partidos 2025/26 desde Football-Data.co.uk")
+        st.caption("Cubre automáticamente las competiciones disponibles en Football-Data. Para terceras no cubiertas, usa CSV universal.")
+        source_labels = [f"{s['country']} · {s['competition']} ({s['code']})" for s in FOOTBALL_DATA_SOURCES]
+        selected = st.multiselect("Competiciones", source_labels, default=source_labels[:5])
+        if st.button("Descargar e importar partidos seleccionados"):
+            total_created = total_skipped = total_errors = 0
+            logs = []
+            for label, source in zip(source_labels, FOOTBALL_DATA_SOURCES):
+                if label not in selected:
+                    continue
+                try:
+                    fd_df = pd.read_csv(source["url"])
+                    matches_df = football_data_to_matches_df(fd_df, source)
+                    created, skipped, errors = import_matches_dataframe(matches_df)
+                    total_created += created
+                    total_skipped += skipped
+                    total_errors += errors
+                    logs.append({"fuente": label, "filas": len(matches_df), "creados": created, "ya_existían": skipped, "errores": errors})
+                except Exception as exc:
+                    total_errors += 1
+                    logs.append({"fuente": label, "filas": 0, "creados": 0, "ya_existían": 0, "errores": str(exc)})
+            st.success(f"Importación finalizada. Creados: {total_created}. Ya existían: {total_skipped}. Errores: {total_errors}.")
+            if logs:
+                st.dataframe(pd.DataFrame(logs), use_container_width=True)
+            st.rerun()
+        st.info("Si Streamlit Cloud no tuviera salida a internet temporalmente, descarga los CSV desde Football-Data y súbelos en la pestaña CSV universal ya transformados al formato de partidos.")
+
+    with tab2:
+        st.subheader("Importar CSV universal")
+        import_type = st.radio("Tipo de importación", ["Jugadores", "Partidos", "Equipos"], horizontal=True)
+        uploaded = st.file_uploader("Sube CSV", type=["csv"], key="mass_csv_upload")
+        if uploaded is not None:
+            raw = pd.read_csv(uploaded, dtype=str).fillna("")
+            st.write("Vista previa")
+            st.dataframe(raw.head(50), use_container_width=True)
+            if st.button("Validar e importar CSV"):
+                if import_type == "Jugadores":
+                    created, skipped, errors = import_players_dataframe(raw)
+                    st.success(f"Jugadores creados: {created}. Ya existentes/duplicados: {skipped}. Errores: {errors}.")
+                elif import_type == "Partidos":
+                    created, skipped, errors = import_matches_dataframe(raw)
+                    st.success(f"Partidos creados: {created}. Ya existentes: {skipped}. Errores: {errors}.")
+                else:
+                    seen, errors = import_teams_dataframe(raw)
+                    st.success(f"Equipos procesados: {seen}. Errores: {errors}.")
+                st.rerun()
+        st.caption("Columnas esperadas: usa las plantillas de la pestaña siguiente.")
+
+    with tab3:
+        st.subheader("Descargar plantillas de carga")
+        c1, c2, c3 = st.columns(3)
+        c1.download_button("Plantilla jugadores.csv", template_bytes(EXPECTED_PLAYER_COLUMNS), file_name="plantilla_jugadores_scouting_hub.csv")
+        c2.download_button("Plantilla partidos.csv", template_bytes(EXPECTED_MATCH_COLUMNS), file_name="plantilla_partidos_scouting_hub.csv")
+        c3.download_button("Plantilla equipos.csv", template_bytes(EXPECTED_TEAM_COLUMNS), file_name="plantilla_equipos_scouting_hub.csv")
+        st.write("**Formato jugadores:**")
+        st.code(",".join(EXPECTED_PLAYER_COLUMNS))
+        st.write("**Formato partidos:**")
+        st.code(",".join(EXPECTED_MATCH_COLUMNS))
+        st.write("**Formato equipos:**")
+        st.code(",".join(EXPECTED_TEAM_COLUMNS))
+
+
+def page_coverage_control() -> None:
+    hero("Cobertura de datos", "Mapa de huecos: equipos sin plantilla, jugadores sin observaciones, fichas incompletas y competiciones con pocos partidos cargados.", "QA", "Cobertura")
+    teams_view, players_view, matches_view, observations_view, _ = enrich_tables()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Equipos", len(teams_view))
+    c2.metric("Equipos sin jugadores", int((teams_view["team_id"].map(players_view.groupby("current_team_id").size()).fillna(0) == 0).sum()) if not teams_view.empty else 0)
+    c3.metric("Jugadores sin observación", int((players_view["player_id"].map(observations_view.groupby("player_id").size()).fillna(0) == 0).sum()) if not players_view.empty else 0)
+    c4.metric("Partidos cargados", len(matches_view))
+    if not teams_view.empty:
+        counts = players_view.groupby("current_team_id").size() if not players_view.empty else pd.Series(dtype=int)
+        tv = teams_view.copy()
+        tv["jugadores"] = tv["team_id"].map(counts).fillna(0).astype(int)
+        st.subheader("Equipos con menos de 15 jugadores cargados")
+        st.dataframe(tv[tv["jugadores"] < 15][["country", "competition", "name", "jugadores"]].sort_values(["country", "competition", "jugadores"]), use_container_width=True)
+    if not players_view.empty:
+        p = players_view.copy()
+        p["observaciones"] = p["player_id"].map(observations_view.groupby("player_id").size() if not observations_view.empty else {}).fillna(0).astype(int)
+        st.subheader("Jugadores sin observación")
+        st.dataframe(p[p["observaciones"] == 0][["display_name", "current_team", "primary_position", "status", "source"]].head(300), use_container_width=True)
 
 def page_backup() -> None:
     hero("Backup / importar / exportar", "Exporta siempre al terminar en Streamlit Cloud. Puedes reimportar ZIP o Excel para continuar más adelante.", "Seguridad", "Portabilidad")
@@ -1197,11 +1784,14 @@ def main() -> None:
             "Estructura",
             "Partidos",
             "Jugadores",
+            "Rankings",
             "Investigación",
             "Duplicados",
             "Campograma / comparador",
             "Base editable",
             "Dataset inicial",
+            "Importador masivo",
+            "Cobertura de datos",
             "Backup / Importar / Exportar",
         ],
     )
@@ -1215,6 +1805,8 @@ def main() -> None:
         page_matches()
     elif page == "Jugadores":
         page_players()
+    elif page == "Rankings":
+        page_rankings()
     elif page == "Investigación":
         page_research()
     elif page == "Duplicados":
@@ -1225,6 +1817,10 @@ def main() -> None:
         page_data_editor()
     elif page == "Dataset inicial":
         page_dataset_info()
+    elif page == "Importador masivo":
+        page_mass_importer()
+    elif page == "Cobertura de datos":
+        page_coverage_control()
     elif page == "Backup / Importar / Exportar":
         page_backup()
 
