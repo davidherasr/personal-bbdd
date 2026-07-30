@@ -1,11 +1,17 @@
-# Auditoría v1.1
+# Auditoría v1.2
 
-- Base inicial: diez CSV con cabeceras y cero filas.
-- Flujo diario principal: crear partido y registrar tabla jugador/minutos/nota/MVP.
-- Las observaciones se actualizan por jugador + partido + equipo para evitar duplicados.
-- La mesa de partido precarga valoraciones existentes.
-- Edición individual y edición rápida masiva de jugadores.
-- Nombres normalizados y centro de duplicados.
-- Exportación en formato técnico y en formato equivalente a la BBDD Excel.
-- Ranking simple separado del análisis avanzado por rol.
-- Seis pruebas automáticas de datos y scoring.
+## Estado del proyecto
+
+- CSV iniciales: vacíos, solo cabeceras.
+- Persistencia: CSV con escritura atómica.
+- Copias: ZIP, Excel técnico y Excel estilo BBDD.
+- Duplicados: normalización, búsqueda aproximada y fusión.
+- Scoring: Score Heras, prioridad, confianza, proyección y encaje de rol.
+- Partido: alineación predefinida o personalizada, suplentes variables y edición posterior.
+
+## Validaciones incluidas
+
+- Compilación de todos los módulos Python.
+- Validación de esquemas y CSV vacíos.
+- Pruebas del scoring y de la integración Excel.
+- Verificación de todas las formaciones predefinidas.

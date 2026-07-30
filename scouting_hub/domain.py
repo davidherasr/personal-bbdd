@@ -215,6 +215,10 @@ def enrich_data() -> Dict[str, pd.DataFrame]:
     players_view = players.copy()
     players_view["nationality"] = players_view["nationality_id"].map(country_map).fillna("")
     players_view["current_team"] = players_view["current_team_id"].map(team_map).fillna("")
+    team_competition_map = dict(zip(teams_view["team_id"], teams_view["competition"])) if not teams_view.empty else {}
+    team_country_map = dict(zip(teams_view["team_id"], teams_view["country"])) if not teams_view.empty else {}
+    players_view["competition"] = players_view["current_team_id"].map(team_competition_map).fillna("")
+    players_view["team_country"] = players_view["current_team_id"].map(team_country_map).fillna("")
     matches_view = matches.copy()
     matches_view["competition"] = matches_view["competition_id"].map(competition_map).fillna("")
     matches_view["home_team"] = matches_view["home_team_id"].map(team_map).fillna("")
@@ -237,6 +241,19 @@ def enrich_data() -> Dict[str, pd.DataFrame]:
 
 
 
+
+
+def delete_match_cascade(match_id: str) -> int:
+    """Delete a match and dependent observations/role assessments."""
+    from .storage import delete_rows
+    deleted = delete_rows("matches", [match_id])
+    if not deleted:
+        return 0
+    for table in ["observations", "role_assessments"]:
+        df = load_table(table)
+        if "match_id" in df.columns:
+            save_table(table, df[df["match_id"].astype(str) != str(match_id)].copy())
+    return deleted
 
 def delete_player_cascade(player_id: str) -> int:
     """Delete a player and all dependent records."""

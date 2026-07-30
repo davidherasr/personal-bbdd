@@ -173,8 +173,8 @@ def percentile_bars(items: Sequence[Tuple[str, float, int]]) -> None:
     st.markdown(f'<div class="panel">{"".join(parts)}</div>', unsafe_allow_html=True)
 
 
-def render_lineup(formation: str, slots: Mapping[str, Mapping[str, object]], height: int = 620) -> None:
-    template = FORMATION_TEMPLATES.get(formation, [])
+def render_lineup(formation: str, slots: Mapping[str, Mapping[str, object]], height: int = 620, template: Sequence[Tuple[str, str, int, int]] | None = None) -> None:
+    template = list(template) if template is not None else FORMATION_TEMPLATES.get(formation, [])
     cards = []
     for slot_key, slot_label, x, y in template:
         data = slots.get(slot_key, {})

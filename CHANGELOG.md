@@ -1,21 +1,20 @@
 # Changelog
 
+## v1.2
+
+- Añadidas 18 formaciones y modo personalizado.
+- Titulares y suplentes configurables.
+- Filas dinámicas en la mesa de partido.
+- Relleno desde plantilla, último encuentro o mesa vacía.
+- Edición/borrado de partidos y observaciones.
+- Ranking multidimensional con más filtros, podio y exportación.
+- Nuevas vistas de calidad, investigación y fichas pendientes.
+- Constructor de alineaciones mejorado.
+- Presets de scoring.
+- Actualización completa de textos y metadatos a v1.2.
+
 ## v1.1
 
-- Actualización completa de textos y metadatos visibles a la versión 1.1.
-- El título de la aplicación, documentación y nombres de backup muestran v1.1.
-- Mantiene el flujo partido → minutos/nota/MVP → ranking y los CSV iniciales vacíos.
-
-## v1.0
-
-- Integración completa de la lógica útil de `BBDD Personal 2026`.
-- Mesa de partido simplificada y precarga de valoraciones existentes.
-- Ambos equipos disponibles dentro del mismo partido.
-- Crear partido y abrirlo automáticamente para puntuar.
-- Tabla Excel con PartidosV, MinutosTotal, NotaMedia, MVPtot, Valoración, NotaAcum, MinutosPart y rank.
-- Nueva página Resumen estilo Excel con cuatro vistas equivalentes a las hojas originales.
-- Edición rápida masiva de jugadores y equipos.
-- Edición de jugador accesible desde cualquier contexto.
-- Ranking posición → rol, con rol opcional.
-- Score Heras con mayor peso del rendimiento y MVP con retornos decrecientes.
-- CSV iniciales completamente vacíos.
+- Integración del flujo simple del Excel personal.
+- Partido, minutos, nota, MVP y ranking.
+- Exportación estilo BBDD.

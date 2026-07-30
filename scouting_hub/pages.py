@@ -9,14 +9,14 @@ import pandas as pd
 import streamlit as st
 
 from .config import (
-    APP_TITLE, DEFAULT_SCORING_WEIGHTS, FOOTS, FORMATION_TEMPLATES, FORMATION_SLOT_POSITIONS, MANUAL_PRIORITIES,
+    APP_TITLE, DEFAULT_SCORING_WEIGHTS, FOOTS, FORMATION_CUSTOM, FORMATION_TEMPLATES, FORMATION_SLOT_POSITIONS, MANUAL_PRIORITIES,
     MATCH_DIFFICULTIES, OPPOSITION_LEVELS, PLAYER_STATUS, POSITIONS, PRIORITY_LABELS,
     RELIABILITY_LEVELS, ROLE_NAMES, ROLE_PROFILES, SOURCE_TYPES, TEAM_TYPES, TREND_LEVELS,
     VIEWING_TYPES, SCHEMAS,
 )
 from .domain import (
     add_competition, add_country, add_match, add_observation, add_player, add_team, save_match_observation,
-    delete_player_cascade, duplicate_candidates, enrich_data, get_name, merge_players, save_role_assessment,
+    delete_match_cascade, delete_player_cascade, duplicate_candidates, enrich_data, get_name, merge_players, save_role_assessment,
 )
 from .scoring import (
     criterion_scores, metrics_table, percentile, scoring_breakdown, similarity_table,
@@ -187,10 +187,21 @@ def _float_or(value: object, default: float = 0.0) -> float:
         return default
 
 
-def formation_dataframe(formation: str, include_bench: bool = False) -> pd.DataFrame:
+def formation_options() -> List[str]:
+    return list(FORMATION_TEMPLATES) + [FORMATION_CUSTOM]
+
+
+def _starter_template(formation: str, custom_starters: int = 11) -> List[Tuple[str, str, int, int]]:
+    if formation != FORMATION_CUSTOM:
+        return FORMATION_TEMPLATES.get(formation, FORMATION_TEMPLATES["4-3-3"])
+    return [(f"CUSTOM_{index}", f"Titular {index}", 10 + index * 6, 50) for index in range(1, max(1, custom_starters) + 1)]
+
+
+def formation_dataframe(formation: str, bench_count: int = 0, custom_starters: int = 11) -> pd.DataFrame:
     rows: List[Dict[str, object]] = []
-    for slot_key, label, _x, _y in FORMATION_TEMPLATES[formation]:
+    for slot_key, label, _x, _y in _starter_template(formation, custom_starters):
         rows.append({
+            "Titular": True,
             "Demarcación": label,
             "Nombre": "",
             "Posición": FORMATION_SLOT_POSITIONS.get(slot_key, ""),
@@ -198,11 +209,12 @@ def formation_dataframe(formation: str, include_bench: bool = False) -> pd.DataF
             "Edad": 0,
             "Pierna": "",
         })
-    if include_bench:
-        for index in range(1, 8):
-            rows.append({"Demarcación": f"Suplente {index}", "Nombre": "", "Posición": "", "Rol": "", "Edad": 0, "Pierna": ""})
+    for index in range(1, max(0, bench_count) + 1):
+        rows.append({
+            "Titular": False, "Demarcación": f"Suplente {index}", "Nombre": "",
+            "Posición": "", "Rol": "", "Edad": 0, "Pierna": "",
+        })
     return pd.DataFrame(rows)
-
 
 def _player_edit_panel(player_id: str, prefix: str = "edit") -> None:
     players = load_table("players")
@@ -393,9 +405,34 @@ def page_dashboard() -> None:
     progress_list("Estado de la base", list(alerts.items()))
 
 
+    st.subheader("Actividad reciente")
+    left_recent, right_recent = st.columns([1.35, 1])
+    with left_recent:
+        if matches.empty:
+            st.info("Todavía no hay partidos.")
+        else:
+            recent = matches.sort_values("match_date", ascending=False).head(8).copy()
+            if not observations.empty:
+                match_counts = observations.groupby("match_id").agg(
+                    Jugadores=("player_id", "nunique"),
+                    Con_nota=("global_rating", lambda x: (pd.to_numeric(x, errors="coerce").fillna(0) > 0).sum()),
+                    MVP=("mvp", lambda x: x.map(lambda value: normalize_text(value) in {"si", "true", "1", "yes", "mvp"}).sum()),
+                ).reset_index()
+                recent = recent.merge(match_counts, on="match_id", how="left")
+            cols = ["match_date", "match_name", "competition", "Jugadores", "Con_nota", "MVP", "analyzed"]
+            st.dataframe(recent[[c for c in cols if c in recent.columns]], use_container_width=True, hide_index=True)
+    with right_recent:
+        pending = metrics[(metrics["observation_count"] < 2) & (metrics["heritage_score"] >= 60)].sort_values("heritage_score", ascending=False).head(8)
+        if pending.empty:
+            st.success("No hay señales claras pendientes de segunda observación.")
+        else:
+            st.markdown("**Segunda observación recomendada**")
+            st.dataframe(pending[["display_name", "current_team", "heritage_score", "confidence", "next_action"]], use_container_width=True, hide_index=True)
+
+
 
 def page_workflow() -> None:
-    hero("Alta y plantilla", "Crea un once completo, corrige jugadores o añade nombres sin convertir cada alta en un formulario interminable.", "Trabajo diario", "Formación primero")
+    hero("Alta y plantilla", "Carga una plantilla completa con una formación real o crea una estructura personalizada. Después podrás corregir cualquier jugador sin tocar los CSV.", "Trabajo diario", "Flexible")
     c0, c1, c2, c3 = st.columns([1, 1.3, 1.5, 1.7])
     scope = c0.radio("Contexto", TEAM_TYPES, horizontal=False, key="wf_scope")
     with c1:
@@ -408,15 +445,23 @@ def page_workflow() -> None:
         st.info("Selecciona o crea un equipo para continuar.")
         return
 
-    tabs = st.tabs(["Once por formación", "Editar jugador", "Jugador individual", "Lista rápida"])
+    tabs = st.tabs(["Plantilla por formación", "Editar jugador", "Jugador individual", "Lista rápida"])
     with tabs[0]:
-        st.caption("La formación ya coloca once demarcaciones. Solo escribe nombres; posición, rol, edad y pierna son opcionales.")
-        formation = st.selectbox("Formación", list(FORMATION_TEMPLATES), key="wf_formation")
-        grid = formation_dataframe(formation)
+        st.caption("Elige un dibujo o usa ‘Personalizada’. Puedes cambiar demarcaciones, posiciones y añadir/eliminar tantas filas como necesites.")
+        c1, c2, c3 = st.columns([1.5, .8, .8])
+        formation = c1.selectbox("Formación", formation_options(), key="wf_formation")
+        custom_starters = c2.number_input(
+            "Titulares", min_value=1, max_value=20, value=11, step=1,
+            disabled=formation != FORMATION_CUSTOM, key="wf_custom_starters",
+        )
+        bench_count = c3.number_input("Suplentes", min_value=0, max_value=30, value=7, step=1, key="wf_bench_count")
+        grid = formation_dataframe(formation, int(bench_count), int(custom_starters))
         edited = st.data_editor(
-            grid, use_container_width=True, hide_index=True, num_rows="fixed", key=f"wf_formation_grid_{formation}",
+            grid, use_container_width=True, hide_index=True, num_rows="dynamic",
+            key=f"wf_formation_grid_{formation}_{custom_starters}_{bench_count}",
             column_config={
-                "Demarcación": st.column_config.TextColumn(disabled=True, width="medium"),
+                "Titular": st.column_config.CheckboxColumn("Titular", width="small"),
+                "Demarcación": st.column_config.TextColumn("Demarcación", width="medium", help="Editable, también en formaciones predefinidas."),
                 "Nombre": st.column_config.TextColumn("Jugador", required=False, width="large"),
                 "Posición": st.column_config.SelectboxColumn(options=[""] + POSITIONS, width="small"),
                 "Rol": st.column_config.SelectboxColumn(options=[""] + ROLE_NAMES, width="medium"),
@@ -424,8 +469,9 @@ def page_workflow() -> None:
                 "Pierna": st.column_config.SelectboxColumn(options=FOOTS, width="small"),
             },
         )
+        st.caption("La tabla permite añadir filas nuevas y borrar las que sobren. ‘Suplentes’ solo define cuántas aparecen de inicio.")
         move_existing = st.checkbox("Mover al equipo seleccionado si el jugador ya existe en otro equipo", value=False, key="wf_move_existing")
-        if st.button("Guardar once / plantilla", type="primary", key="wf_save_formation"):
+        if st.button("Guardar plantilla", type="primary", key="wf_save_formation"):
             created, updated, warnings = _save_formation_roster(team_id, country_id, edited, move_existing)
             st.success(f"Creados: {created}. Actualizados: {updated}.")
             for warning in warnings:
@@ -443,7 +489,7 @@ def page_workflow() -> None:
                 lambda row: " · ".join(x for x in [str(row.get("display_name", "")), str(row.get("current_team", "")), str(row.get("primary_position", ""))] if x), axis=1
             )
             player_id = _select_from_df("Jugador que quieres corregir", selector, "player_id", "edit_label", "wf_edit_player")
-            st.caption("Puedes cambiarlo de equipo aunque hayas entrado desde otro club; el historial de partidos conserva el equipo con el que fue observado.")
+            st.caption("Puedes cambiarlo de equipo; el historial conserva el club con el que fue observado en cada partido.")
             if player_id:
                 _player_edit_panel(player_id, "wf_edit")
 
@@ -561,74 +607,119 @@ def _observation_form(player_id: str, team_id: str = "", prefix: str = "obs") ->
         )
         _message(created, message)
 
-def _match_grid_base(match_id: str, team_id: str, formation: str) -> pd.DataFrame:
-    """Build a formation grid and preload prior match ratings when they exist."""
+def _match_grid_base(
+    match_id: str,
+    team_id: str,
+    formation: str,
+    bench_count: int = 7,
+    custom_starters: int = 11,
+    prefill_mode: str = "Plantilla por posición",
+) -> pd.DataFrame:
+    """Build a flexible match grid and preload current/previous data."""
     data = enrich_data()
     players = data["players"]
     roster = players[players["current_team_id"].astype(str) == str(team_id)].sort_values("display_name")
     observations = data["observations"]
-    existing = observations[
+    current = observations[
         (observations["match_id"].astype(str) == str(match_id)) &
         (observations["team_id"].astype(str) == str(team_id))
     ].copy()
-    if not existing.empty:
-        existing["_starter"] = existing["starter"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
-        existing["_minutes"] = pd.to_numeric(existing["minutes_observed"], errors="coerce").fillna(0)
-        existing = existing.sort_values(["_starter", "_minutes"], ascending=[False, False])
+    for frame in [current]:
+        if not frame.empty:
+            frame["_starter"] = frame["starter"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
+            frame["_minutes"] = pd.to_numeric(frame["minutes_observed"], errors="coerce").fillna(0)
+
+    source = current.copy()
+    source_is_current = not current.empty
+    if current.empty and prefill_mode == "Último partido del equipo" and not observations.empty:
+        previous = observations[
+            (observations["team_id"].astype(str) == str(team_id)) &
+            (observations["match_id"].astype(str) != str(match_id))
+        ].copy()
+        if not previous.empty:
+            matches = data["matches"][["match_id", "match_date"]].copy()
+            previous = previous.merge(matches, on="match_id", how="left", suffixes=("", "_date"))
+            previous["_date"] = pd.to_datetime(previous["match_date"], errors="coerce")
+            last_match = previous.sort_values(["_date", "created_at"], ascending=False).iloc[0]["match_id"]
+            source = previous[previous["match_id"].astype(str) == str(last_match)].copy()
+            source["_starter"] = source["starter"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
+            source["_minutes"] = pd.to_numeric(source["minutes_observed"], errors="coerce").fillna(0)
+            source_is_current = False
 
     player_by_id = {str(row["player_id"]): row for _, row in players.iterrows()}
     used_ids: set[str] = set()
     rows: List[Dict[str, object]] = []
 
-    def observation_row(player_id: str) -> pd.Series | None:
-        found = existing[existing["player_id"].astype(str) == str(player_id)]
+    def current_observation(player_id: str) -> pd.Series | None:
+        found = current[current["player_id"].astype(str) == str(player_id)]
         return found.iloc[0] if not found.empty else None
 
-    for slot_key, label, _x, _y in FORMATION_TEMPLATES[formation]:
+    starter_slots = _starter_template(formation, custom_starters)
+    for slot_index, (slot_key, label, _x, _y) in enumerate(starter_slots, 1):
         position = FORMATION_SLOT_POSITIONS.get(slot_key, "")
         chosen_id = ""
-        # Prefer a previously saved starter in the same/compatible position.
-        if not existing.empty:
-            candidates = existing[(existing["_starter"]) & (~existing["player_id"].astype(str).isin(used_ids))]
-            same = candidates[candidates["observed_position"].astype(str) == position]
+        if not source.empty:
+            candidates = source[(source["_starter"]) & (~source["player_id"].astype(str).isin(used_ids))]
+            same = candidates[candidates["observed_position"].astype(str) == position] if position else pd.DataFrame()
             if not same.empty:
                 chosen_id = str(same.iloc[0]["player_id"])
             elif not candidates.empty:
                 chosen_id = str(candidates.iloc[0]["player_id"])
-        if not chosen_id:
-            candidates = roster[(roster["primary_position"].astype(str) == position) & (~roster["player_id"].astype(str).isin(used_ids))]
-            if not candidates.empty:
-                chosen_id = str(candidates.iloc[0]["player_id"])
-        used_ids.add(chosen_id) if chosen_id else None
+        if not chosen_id and prefill_mode == "Plantilla por posición" and not roster.empty:
+            candidates = roster[~roster["player_id"].astype(str).isin(used_ids)]
+            same = candidates[candidates["primary_position"].astype(str) == position] if position else pd.DataFrame()
+            if not same.empty:
+                chosen_id = str(same.iloc[0]["player_id"])
+        if chosen_id:
+            used_ids.add(chosen_id)
         player = player_by_id.get(chosen_id)
-        obs = observation_row(chosen_id) if chosen_id else None
+        obs = current_observation(chosen_id) if chosen_id else None
+        source_row = source[source["player_id"].astype(str) == chosen_id].iloc[0] if chosen_id and not source[source["player_id"].astype(str) == chosen_id].empty else None
+        inferred_position = str(obs.get("observed_position", "")) if obs is not None else str(source_row.get("observed_position", "")) if source_row is not None else position
         rows.append({
-            "Demarcación": label,
+            "Titular": True,
+            "Demarcación": label if formation != FORMATION_CUSTOM else (inferred_position or f"Titular {slot_index}"),
             "Jugador": str(player.get("display_name", "")) if player is not None else "",
             "Jugador nuevo": "",
-            "Posición": str(obs.get("observed_position", position)) if obs is not None else position,
+            "Posición": inferred_position or position,
             "Minutos": int(_float_or(obs.get("minutes_observed"), 90)) if obs is not None else 90,
             "Nota": _float_or(obs.get("global_rating"), 0.0) if obs is not None else 0.0,
             "MVP": normalize_text(obs.get("mvp", "")) in {"si", "true", "1", "yes", "mvp"} if obs is not None else False,
             "Notas": str(obs.get("positive_notes", "")) if obs is not None else "",
         })
 
-    # Previously saved substitutes are always shown, followed by a few blank rows.
-    if not existing.empty:
-        remaining = existing[~existing["player_id"].astype(str).isin(used_ids)]
-        for _, obs in remaining.iterrows():
-            pid = str(obs.get("player_id", ""))
-            player = player_by_id.get(pid)
-            rows.append({
-                "Demarcación": "Suplente", "Jugador": str(player.get("display_name", "")) if player is not None else str(obs.get("player", "")),
-                "Jugador nuevo": "", "Posición": str(obs.get("observed_position", "")),
-                "Minutos": int(_float_or(obs.get("minutes_observed"), 0)), "Nota": _float_or(obs.get("global_rating"), 0.0),
-                "MVP": normalize_text(obs.get("mvp", "")) in {"si", "true", "1", "yes", "mvp"},
-                "Notas": str(obs.get("positive_notes", "")),
-            })
-    for index in range(1, 5):
-        rows.append({"Demarcación": f"Suplente {index}", "Jugador": "", "Jugador nuevo": "", "Posición": "", "Minutos": 0, "Nota": 0.0, "MVP": False, "Notas": ""})
+    remaining_source = source[~source["player_id"].astype(str).isin(used_ids)].copy() if not source.empty else pd.DataFrame()
+    if not remaining_source.empty:
+        remaining_source = remaining_source.sort_values(["_starter", "_minutes"], ascending=[False, False])
+    displayed_subs = 0
+    for _, source_row in remaining_source.iterrows():
+        if displayed_subs >= bench_count and not source_is_current:
+            break
+        pid = str(source_row.get("player_id", ""))
+        player = player_by_id.get(pid)
+        obs = current_observation(pid)
+        rows.append({
+            "Titular": bool(source_row.get("_starter", False)) if source_is_current else False,
+            "Demarcación": "Suplente" if not bool(source_row.get("_starter", False)) else "Titular adicional",
+            "Jugador": str(player.get("display_name", "")) if player is not None else str(source_row.get("player", "")),
+            "Jugador nuevo": "",
+            "Posición": str(obs.get("observed_position", "")) if obs is not None else str(source_row.get("observed_position", "")),
+            "Minutos": int(_float_or(obs.get("minutes_observed"), 0)) if obs is not None else 0,
+            "Nota": _float_or(obs.get("global_rating"), 0.0) if obs is not None else 0.0,
+            "MVP": normalize_text(obs.get("mvp", "")) in {"si", "true", "1", "yes", "mvp"} if obs is not None else False,
+            "Notas": str(obs.get("positive_notes", "")) if obs is not None else "",
+        })
+        displayed_subs += int(not bool(source_row.get("_starter", False)))
+
+    while displayed_subs < max(0, bench_count):
+        displayed_subs += 1
+        rows.append({
+            "Titular": False, "Demarcación": f"Suplente {displayed_subs}", "Jugador": "",
+            "Jugador nuevo": "", "Posición": "", "Minutos": 0, "Nota": 0.0,
+            "MVP": False, "Notas": "",
+        })
     return pd.DataFrame(rows)
+
 
 def _match_scoring_grid(match_id: str, team_id: str, side: str) -> None:
     matches = load_table("matches")
@@ -639,10 +730,36 @@ def _match_scoring_grid(match_id: str, team_id: str, side: str) -> None:
     match = match_rows.iloc[0]
     formation_field = "home_formation" if side == "Local" else "away_formation"
     current_formation = str(match.get(formation_field, "")) or "4-3-3"
-    formations = list(FORMATION_TEMPLATES)
-    c1, c2 = st.columns([1, 2])
-    formation = c1.selectbox("Formación", formations, index=_safe_index(formations, current_formation), key=f"desk_form_{match_id}_{team_id}")
-    c2.info("Modo rápido: jugador, minutos, nota, MVP y una nota corta. El resto se aplica con valores sensatos por defecto.")
+    formations = formation_options()
+    if current_formation not in formations:
+        current_formation = FORMATION_CUSTOM
+
+    observations = load_table("observations")
+    existing = observations[
+        (observations["match_id"].astype(str) == str(match_id)) &
+        (observations["team_id"].astype(str) == str(team_id))
+    ].copy()
+    if not existing.empty:
+        starter_mask = existing["starter"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
+        existing_starters = int(starter_mask.sum())
+        existing_subs = int((~starter_mask).sum())
+    else:
+        existing_starters, existing_subs = 11, 0
+
+    top1, top2, top3, top4 = st.columns([1.45, .75, .75, 1.4])
+    formation = top1.selectbox("Formación", formations, index=_safe_index(formations, current_formation), key=f"desk_form_{match_id}_{team_id}")
+    custom_starters = top2.number_input(
+        "Titulares", 1, 20, existing_starters or 11, 1,
+        disabled=formation != FORMATION_CUSTOM, key=f"desk_starters_{match_id}_{team_id}",
+    )
+    bench_default = max(7, existing_subs)
+    bench_count = top3.number_input("Suplentes", 0, 30, bench_default, 1, key=f"desk_bench_{match_id}_{team_id}")
+    prefill_mode = top4.selectbox(
+        "Relleno inicial", ["Plantilla por posición", "Último partido del equipo", "Vacía"],
+        key=f"desk_prefill_{match_id}_{team_id}",
+        help="Solo actúa si este equipo todavía no tiene datos guardados en el partido actual.",
+    )
+    st.info("Puedes editar la demarcación, cambiar quién es titular y añadir o borrar filas. Los suplentes no tienen límite práctico: usa el selector o el + de la tabla.")
 
     viewing, reliability, trend = "Partido completo", "Alta", "Mantiene"
     opposition, difficulty = "Medio", "Media"
@@ -656,28 +773,45 @@ def _match_scoring_grid(match_id: str, team_id: str, side: str) -> None:
 
     players = load_table("players")
     roster = players[players["current_team_id"].astype(str) == str(team_id)].sort_values("display_name")
-    names = roster["display_name"].astype(str).tolist()
-    grid = _match_grid_base(match_id, team_id, formation)
+    grid = _match_grid_base(match_id, team_id, formation, int(bench_count), int(custom_starters), prefill_mode)
+    prefilled_names = [x for x in grid["Jugador"].astype(str).tolist() if x]
+    names = sorted(set(roster["display_name"].astype(str).tolist()) | set(prefilled_names))
+    all_name_to_id = dict(zip(players["display_name"].astype(str), players["player_id"].astype(str)))
     edited = st.data_editor(
-        grid, use_container_width=True, hide_index=True, num_rows="dynamic", key=f"desk_grid_{match_id}_{team_id}_{formation}",
+        grid, use_container_width=True, hide_index=True, num_rows="dynamic",
+        key=f"desk_grid_{match_id}_{team_id}_{formation}_{custom_starters}_{bench_count}_{prefill_mode}",
         column_config={
-            "Demarcación": st.column_config.TextColumn(disabled=True, width="medium"),
+            "Titular": st.column_config.CheckboxColumn("Titular", width="small"),
+            "Demarcación": st.column_config.TextColumn("Demarcación", width="medium"),
             "Jugador": st.column_config.SelectboxColumn(options=[""] + names, width="large"),
             "Jugador nuevo": st.column_config.TextColumn(width="large", help="Escríbelo aquí si aún no está en la plantilla."),
             "Posición": st.column_config.SelectboxColumn(options=[""] + POSITIONS, width="small"),
-            "Minutos": st.column_config.NumberColumn(min_value=0, max_value=130, step=1, width="small"),
+            "Minutos": st.column_config.NumberColumn(min_value=0, max_value=150, step=1, width="small"),
             "Nota": st.column_config.NumberColumn(min_value=0.0, max_value=10.0, step=0.5, format="%.1f", width="small"),
             "MVP": st.column_config.CheckboxColumn(width="small"),
             "Notas": st.column_config.TextColumn(width="large"),
         },
     )
-    move_existing = st.checkbox("Mover al equipo si un nombre nuevo ya existía en otro club", value=False, key=f"desk_move_{match_id}_{team_id}")
+    selected_count = int(((edited["Jugador"].astype(str).str.strip() != "") | (edited["Jugador nuevo"].astype(str).str.strip() != "")).sum())
+    rated_count = int((pd.to_numeric(edited["Nota"], errors="coerce").fillna(0) > 0).sum())
+    total_minutes = int(pd.to_numeric(edited["Minutos"], errors="coerce").fillna(0).sum())
+    mvp_count = int(edited["MVP"].fillna(False).astype(bool).sum())
+    kpi_grid([("Jugadores cargados", selected_count, ""), ("Con nota", rated_count, "good"), ("Minutos", total_minutes, ""), ("MVP", mvp_count, "warn" if mvp_count > 1 else "")])
+
+    c1, c2, c3 = st.columns(3)
+    move_existing = c1.checkbox("Mover si ya existe en otro club", value=False, key=f"desk_move_{match_id}_{team_id}")
+    save_unused = c2.checkbox("Registrar convocados sin minutos", value=False, key=f"desk_unused_{match_id}_{team_id}")
+    allow_tied_mvp = c3.checkbox("Permitir varios MVP", value=False, key=f"desk_multi_mvp_{match_id}_{team_id}")
     st.caption("Puedes volver al partido y corregir notas: se actualiza la fila existente, no se duplica.")
     if st.button(f"Guardar {side.lower()}", type="primary", key=f"desk_save_{match_id}_{team_id}"):
-        name_to_id = dict(zip(roster["display_name"].astype(str), roster["player_id"].astype(str)))
+        if mvp_count > 1 and not allow_tied_mvp:
+            st.error("Hay más de un MVP. Marca ‘Permitir varios MVP’ si fue un empate real.")
+            return
+        name_to_id = all_name_to_id
         created_players = created_obs = updated_obs = skipped = 0
         warnings: List[str] = []
-        for row_index, row in edited.iterrows():
+        seen_players: set[str] = set()
+        for _, row in edited.iterrows():
             selected_name = str(row.get("Jugador", "")).strip()
             new_name = str(row.get("Jugador nuevo", "")).strip()
             player_id = name_to_id.get(selected_name, "")
@@ -698,14 +832,22 @@ def _match_scoring_grid(match_id: str, team_id: str, side: str) -> None:
                             update_row("players", player_id, {"current_team_id": team_id})
             if not player_id:
                 continue
-            player_rows = load_table("players")
-            player_row = player_rows[player_rows["player_id"].astype(str) == str(player_id)]
-            primary_role = str(player_row.iloc[0].get("primary_role", "")) if not player_row.empty else ""
+            if player_id in seen_players:
+                warnings.append(f"{selected_name or new_name}: aparece dos veces; solo se ha guardado la primera fila.")
+                skipped += 1
+                continue
+            seen_players.add(player_id)
             minutes = int(_float_or(row.get("Minutos"), 0))
             rating = _float_or(row.get("Nota"), 0.0)
             mvp = bool(row.get("MVP", False))
             notes = str(row.get("Notas", "")).strip()
-            is_starter = row_index < len(FORMATION_TEMPLATES[formation]) and not str(row.get("Demarcación", "")).lower().startswith("suplente")
+            if not save_unused and minutes <= 0 and rating <= 0 and not mvp and not notes:
+                skipped += 1
+                continue
+            player_rows = load_table("players")
+            player_row = player_rows[player_rows["player_id"].astype(str) == str(player_id)]
+            primary_role = str(player_row.iloc[0].get("primary_role", "")) if not player_row.empty else ""
+            is_starter = bool(row.get("Titular", False))
             _, was_created, _ = save_match_observation(
                 player_id=player_id, match_id=match_id, team_id=team_id,
                 observed_position=str(row.get("Posición", "")), role=primary_role,
@@ -717,15 +859,13 @@ def _match_scoring_grid(match_id: str, team_id: str, side: str) -> None:
             created_obs += int(was_created)
             updated_obs += int(not was_created)
         update_row("matches", match_id, {"analyzed": "Sí", formation_field: formation})
-        st.success(f"Jugadores nuevos: {created_players}. Observaciones creadas: {created_obs}. Actualizadas: {updated_obs}.")
+        st.success(f"Jugadores nuevos: {created_players}. Observaciones creadas: {created_obs}. Actualizadas: {updated_obs}. Omitidas: {skipped}.")
         for warning in warnings:
             st.warning(warning)
-        if not warnings:
-            st.rerun()
 
 def page_matches() -> None:
-    hero("Registrar partido", "El flujo principal del Excel: selecciona un partido y registra a todos desde una tabla simple.", "Partido → nota", "Pocos clics")
-    tabs = st.tabs(["Puntuar partido", "Crear partido", "Historial"])
+    hero("Registrar partido", "Crea el encuentro, carga cualquier dibujo y puntúa a titulares y suplentes desde una sola mesa.", "Partido → nota", "Sin límites")
+    tabs = st.tabs(["Puntuar partido", "Crear partido", "Editar / borrar", "Historial"])
 
     with tabs[0]:
         matches = enrich_data()["matches"].sort_values("match_date", ascending=False)
@@ -770,37 +910,113 @@ def page_matches() -> None:
             context = st.text_area("Contexto opcional", placeholder="Jornada, sistemas, expulsiones, relevancia…")
             submitted = st.form_submit_button("Crear y abrir partido")
         if submitted:
-            mid, created, message = add_match(
-                match_date=str(match_date), competition_id=competition_id, home_team_id=home,
-                away_team_id=away, season=season, context=context, score_home=score_home,
-                score_away=score_away, analyzed="Sí" if analyzed else "No",
-            )
-            _message(created, message)
-            if mid:
-                _queue_widget_value("desk_match", mid)
-                st.rerun()
+            if not home or not away:
+                st.error("Selecciona local y visitante.")
+            elif home == away:
+                st.error("Local y visitante no pueden ser el mismo equipo.")
+            else:
+                mid, created, message = add_match(
+                    match_date=str(match_date), competition_id=competition_id, home_team_id=home,
+                    away_team_id=away, season=season, context=context, score_home=score_home,
+                    score_away=score_away, analyzed="Sí" if analyzed else "No",
+                )
+                _message(created, message)
+                if mid:
+                    _queue_widget_value("desk_match", mid)
+                    st.rerun()
 
     with tabs[2]:
         data = enrich_data()
-        matches = data["matches"]
+        matches = data["matches"].sort_values("match_date", ascending=False)
+        if matches.empty:
+            st.info("No hay partidos que editar.")
+        else:
+            match_id = _select_from_df("Partido a editar", matches, "match_id", "match_name", "edit_match_id")
+            if match_id:
+                raw = load_table("matches")
+                row = raw[raw["match_id"].astype(str) == str(match_id)].iloc[0]
+                competitions = data["competitions"].sort_values(["country", "name"])
+                teams = data["teams"].sort_values(["country", "competition", "name"])
+                comp_options = [""] + competitions["competition_id"].astype(str).tolist()
+                comp_labels = {"": "— Sin competición —", **dict(zip(competitions["competition_id"].astype(str), competitions["country"].astype(str) + " · " + competitions["name"].astype(str)))}
+                team_options = [""] + teams["team_id"].astype(str).tolist()
+                team_labels = {"": "— Sin equipo —"}
+                for _, team in teams.iterrows():
+                    team_labels[str(team["team_id"])] = " · ".join(x for x in [str(team.get("name", "")), str(team.get("competition", "")), str(team.get("country", ""))] if x)
+                c1, c2, c3 = st.columns(3)
+                edit_date = c1.date_input("Fecha", value=pd.to_datetime(row.get("match_date"), errors="coerce").date() if pd.notna(pd.to_datetime(row.get("match_date"), errors="coerce")) else date.today(), key=f"edit_match_date_{match_id}")
+                edit_comp = c2.selectbox("Competición", comp_options, index=_safe_index(comp_options, row.get("competition_id")), format_func=lambda value: comp_labels.get(value, value), key=f"edit_match_comp_{match_id}")
+                edit_season = c3.text_input("Temporada", value=str(row.get("season", "")), key=f"edit_match_season_{match_id}")
+                c4, c5 = st.columns(2)
+                edit_home = c4.selectbox("Local", team_options, index=_safe_index(team_options, row.get("home_team_id")), format_func=lambda value: team_labels.get(value, value), key=f"edit_match_home_{match_id}")
+                edit_away = c5.selectbox("Visitante", team_options, index=_safe_index(team_options, row.get("away_team_id")), format_func=lambda value: team_labels.get(value, value), key=f"edit_match_away_{match_id}")
+                c6, c7, c8 = st.columns(3)
+                edit_score_home = c6.text_input("Goles local", value=str(row.get("score_home", "")), key=f"edit_match_sh_{match_id}")
+                edit_score_away = c7.text_input("Goles visitante", value=str(row.get("score_away", "")), key=f"edit_match_sa_{match_id}")
+                edit_analyzed = c8.checkbox("Analizado", value=normalize_text(row.get("analyzed", "")) in {"si", "true", "1", "yes"}, key=f"edit_match_an_{match_id}")
+                edit_context = st.text_area("Contexto", value=str(row.get("context", "")), key=f"edit_match_context_{match_id}")
+                if st.button("Guardar partido", type="primary", key=f"edit_match_save_{match_id}"):
+                    if edit_home and edit_home == edit_away:
+                        st.error("Local y visitante no pueden ser el mismo equipo.")
+                    else:
+                        update_row("matches", match_id, {
+                            "match_date": str(edit_date), "competition_id": edit_comp, "home_team_id": edit_home,
+                            "away_team_id": edit_away, "season": edit_season, "score_home": edit_score_home,
+                            "score_away": edit_score_away, "analyzed": "Sí" if edit_analyzed else "No", "context": edit_context,
+                        })
+                        st.success("Partido actualizado.")
+                        st.rerun()
+                with st.expander("Eliminar partido y sus observaciones"):
+                    st.warning("Se eliminarán también las valoraciones y evaluaciones de rol asociadas a este partido.")
+                    confirm = st.text_input("Escribe ELIMINAR PARTIDO", key=f"delete_match_confirm_{match_id}")
+                    if st.button("Eliminar definitivamente", disabled=confirm != "ELIMINAR PARTIDO", key=f"delete_match_{match_id}"):
+                        delete_match_cascade(match_id)
+                        st.success("Partido eliminado.")
+                        st.rerun()
+
+    with tabs[3]:
+        data = enrich_data()
+        matches = data["matches"].copy()
         observations = data["observations"]
         if matches.empty:
             empty_state("Sin partidos", "Crea el primero para contextualizar tus valoraciones.")
         else:
-            summary = matches.copy()
             if not observations.empty:
-                counts = observations.groupby("match_id").agg(Jugadores=("player_id", "nunique"), Minutos=("minutes_observed", lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()), Nota_media=("global_rating", lambda x: pd.to_numeric(x, errors="coerce").replace(0, pd.NA).dropna().mean())).reset_index()
-                summary = summary.merge(counts, on="match_id", how="left")
-            cols = ["match_date", "match_name", "competition", "season", "score_home", "score_away", "analyzed", "Jugadores", "Nota_media", "context"]
+                counts = observations.groupby("match_id").agg(
+                    Jugadores=("player_id", "nunique"),
+                    Con_nota=("global_rating", lambda x: (pd.to_numeric(x, errors="coerce").fillna(0) > 0).sum()),
+                    Minutos=("minutes_observed", lambda x: pd.to_numeric(x, errors="coerce").fillna(0).sum()),
+                    Nota_media=("global_rating", lambda x: pd.to_numeric(x, errors="coerce").replace(0, pd.NA).dropna().mean()),
+                    MVP=("mvp", lambda x: x.map(lambda value: normalize_text(value) in {"si", "true", "1", "yes", "mvp"}).sum()),
+                ).reset_index()
+                matches = matches.merge(counts, on="match_id", how="left")
+            f1, f2, f3 = st.columns(3)
+            selected_teams = f1.multiselect("Equipo", sorted(set(matches["home_team"].tolist() + matches["away_team"].tolist()) - {""}))
+            selected_competitions = f2.multiselect("Competición", sorted(x for x in matches["competition"].unique().tolist() if x))
+            status_filter = f3.multiselect("Estado", ["Analizado", "Pendiente"])
+            summary = matches.copy()
+            if selected_teams:
+                summary = summary[summary["home_team"].isin(selected_teams) | summary["away_team"].isin(selected_teams)]
+            if selected_competitions:
+                summary = summary[summary["competition"].isin(selected_competitions)]
+            if status_filter:
+                analyzed_mask = summary["analyzed"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
+                allowed = pd.Series(False, index=summary.index)
+                if "Analizado" in status_filter:
+                    allowed |= analyzed_mask
+                if "Pendiente" in status_filter:
+                    allowed |= ~analyzed_mask
+                summary = summary[allowed]
+            cols = ["match_date", "match_name", "competition", "season", "score_home", "score_away", "analyzed", "home_formation", "away_formation", "Jugadores", "Con_nota", "MVP", "Nota_media", "context"]
             st.dataframe(summary[[c for c in cols if c in summary.columns]].sort_values("match_date", ascending=False), use_container_width=True, hide_index=True)
 
 def page_observations() -> None:
-    hero("Observaciones y rol", "Registra una nota rápida o profundiza con criterios específicos del rol. No necesitas rellenarlo todo durante el partido.", "Visionado", "Role fit")
+    hero("Observaciones y rol", "Añade una observación individual, profundiza en el rol o corrige cualquier nota histórica sin entrar en la base técnica.", "Visionado", "Editable")
     player_id = player_selector("Jugador", "obs_page_player")
     if not player_id:
         empty_state("Selecciona un jugador", "La observación rápida y la evaluación de rol aparecerán aquí.")
         return
-    tabs = st.tabs(["Observación rápida", "Evaluación detallada del rol", "Historial"])
+    tabs = st.tabs(["Observación rápida", "Evaluación detallada del rol", "Historial", "Editar / eliminar"])
     with tabs[0]:
         player = load_table("players")
         row = player[player["player_id"].astype(str) == str(player_id)].iloc[0]
@@ -813,8 +1029,62 @@ def page_observations() -> None:
         if history.empty:
             st.info("Todavía no hay observaciones.")
         else:
-            st.dataframe(history[["created_at", "match", "observed_position", "role", "minutes_observed", "global_rating", "reliability", "trend", "positive_notes", "improvement_notes"]].sort_values("created_at", ascending=False), use_container_width=True, hide_index=True)
-
+            cols = ["created_at", "match", "team", "observed_position", "starter", "minutes_observed", "global_rating", "mvp", "reliability", "trend", "positive_notes", "improvement_notes"]
+            st.dataframe(history[[c for c in cols if c in history.columns]].sort_values("created_at", ascending=False), use_container_width=True, hide_index=True)
+    with tabs[3]:
+        raw = load_table("observations")
+        history = raw[raw["player_id"].astype(str) == str(player_id)].copy()
+        if history.empty:
+            st.info("No hay observaciones que editar.")
+        else:
+            enriched = enrich_data()["observations"]
+            labels = enriched[["observation_id", "match", "team"]].drop_duplicates("observation_id")
+            history = history.merge(labels, on="observation_id", how="left")
+            history["Minutos"] = pd.to_numeric(history["minutes_observed"], errors="coerce").fillna(0).astype(int)
+            history["Nota"] = pd.to_numeric(history["global_rating"], errors="coerce").fillna(0.0)
+            history["MVP"] = history["mvp"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes", "mvp"})
+            history["Titular"] = history["starter"].map(lambda value: normalize_text(value) in {"si", "true", "1", "yes"})
+            history["Eliminar"] = False
+            edit_df = history[["observation_id", "match", "team", "observed_position", "Titular", "Minutos", "Nota", "MVP", "reliability", "trend", "positive_notes", "improvement_notes", "Eliminar"]]
+            edited = st.data_editor(
+                edit_df, use_container_width=True, hide_index=True, num_rows="fixed", key=f"obs_history_edit_{player_id}",
+                column_config={
+                    "observation_id": st.column_config.TextColumn(disabled=True),
+                    "match": st.column_config.TextColumn("Partido", disabled=True, width="large"),
+                    "team": st.column_config.TextColumn("Equipo", disabled=True, width="medium"),
+                    "observed_position": st.column_config.SelectboxColumn("Posición", options=[""] + POSITIONS, width="small"),
+                    "Titular": st.column_config.CheckboxColumn(width="small"),
+                    "Minutos": st.column_config.NumberColumn(min_value=0, max_value=150, step=1, width="small"),
+                    "Nota": st.column_config.NumberColumn(min_value=0.0, max_value=10.0, step=.5, format="%.1f", width="small"),
+                    "MVP": st.column_config.CheckboxColumn(width="small"),
+                    "reliability": st.column_config.SelectboxColumn("Fiabilidad", options=RELIABILITY_LEVELS, width="small"),
+                    "trend": st.column_config.SelectboxColumn("Tendencia", options=TREND_LEVELS, width="small"),
+                    "positive_notes": st.column_config.TextColumn("Notas", width="large"),
+                    "improvement_notes": st.column_config.TextColumn("Dudas", width="large"),
+                    "Eliminar": st.column_config.CheckboxColumn(help="Marca y guarda para eliminar la fila."),
+                },
+            )
+            if st.button("Guardar cambios del historial", type="primary", key=f"obs_history_save_{player_id}"):
+                delete_ids: List[str] = []
+                updated = 0
+                for _, row in edited.iterrows():
+                    oid = str(row["observation_id"])
+                    if bool(row.get("Eliminar", False)):
+                        delete_ids.append(oid)
+                        continue
+                    update_row("observations", oid, {
+                        "observed_position": row.get("observed_position", ""),
+                        "starter": "Sí" if bool(row.get("Titular", False)) else "No",
+                        "minutes_observed": int(_float_or(row.get("Minutos"), 0)),
+                        "global_rating": _float_or(row.get("Nota"), 0.0) or "",
+                        "mvp": "Sí" if bool(row.get("MVP", False)) else "No",
+                        "reliability": row.get("reliability", ""), "trend": row.get("trend", ""),
+                        "positive_notes": row.get("positive_notes", ""), "improvement_notes": row.get("improvement_notes", ""),
+                    })
+                    updated += 1
+                deleted = delete_rows("observations", delete_ids) if delete_ids else 0
+                st.success(f"Observaciones actualizadas: {updated}. Eliminadas: {deleted}.")
+                st.rerun()
 
 def _role_assessment_form(player_id: str) -> None:
     players = load_table("players")
@@ -855,7 +1125,7 @@ def page_players() -> None:
         empty_state("Sin jugadores", "Añade el primero desde ‘Alta y plantilla’ o durante un partido.")
         return
     metrics = metrics_table(players, observations, assessments, _weights())
-    tabs = st.tabs(["Listado y ficha", "Edición rápida"])
+    tabs = st.tabs(["Listado y ficha", "Edición rápida", "Pendientes de completar"])
 
     with tabs[0]:
         c1, c2, c3, c4 = st.columns(4)
@@ -940,6 +1210,35 @@ def page_players() -> None:
                 st.success(f"Jugadores actualizados: {len(edited)}.")
                 st.rerun()
 
+
+    with tabs[2]:
+        st.caption("Encuentra rápidamente fichas incompletas y ábrelas directamente para corregirlas.")
+        issues = st.multiselect(
+            "Mostrar", ["Sin equipo", "Sin posición", "Sin edad", "Sin observaciones", "Sin rol", "Confianza baja"],
+            default=["Sin equipo", "Sin posición", "Sin observaciones"], key="players_pending_issues",
+        )
+        pending = metrics.copy()
+        mask = pd.Series(False, index=pending.index)
+        if "Sin equipo" in issues:
+            mask |= pending["current_team"].astype(str).str.strip() == ""
+        if "Sin posición" in issues:
+            mask |= pending["primary_position"].astype(str).str.strip() == ""
+        if "Sin edad" in issues:
+            mask |= pd.to_numeric(pending["age"], errors="coerce").isna() | (pd.to_numeric(pending["age"], errors="coerce").fillna(0) <= 0)
+        if "Sin observaciones" in issues:
+            mask |= pending["observation_count"] <= 0
+        if "Sin rol" in issues:
+            mask |= pending["primary_role"].astype(str).str.strip() == ""
+        if "Confianza baja" in issues:
+            mask |= pending["confidence"] < 45
+        pending = pending[mask] if issues else pending
+        cols = ["display_name", "current_team", "primary_position", "age", "primary_role", "observation_count", "total_minutes", "completeness", "confidence", "alerts_text"]
+        st.dataframe(pending[[c for c in cols if c in pending.columns]].sort_values(["completeness", "confidence"]), use_container_width=True, hide_index=True)
+        if not pending.empty:
+            pending_id = _select_from_df("Corregir ficha", pending.sort_values("display_name"), "player_id", "display_name", "players_pending_edit")
+            if pending_id:
+                _player_edit_panel(pending_id, "players_pending")
+
 def _player_profile(player_id: str, metrics: pd.DataFrame, observations: pd.DataFrame, assessments: pd.DataFrame) -> None:
     player = metrics[metrics["player_id"].astype(str) == str(player_id)].iloc[0]
     obs = observations[observations["player_id"].astype(str) == str(player_id)]
@@ -1010,19 +1309,24 @@ def _report_markdown(player: pd.Series, score: Mapping[str, object], observation
 
 
 def page_rankings() -> None:
-    hero("Rankings", "Una tabla simple como tu Excel y, cuando lo necesites, capas de prioridad, confianza y rol.", "Score Heras", "Posición → rol")
+    hero("Rankings", "Primero eliges posición, después un rol compatible y finalmente la métrica que quieres ordenar. El ranking general no exige una evaluación avanzada.", "Score Heras", "Posición → rol")
     data = enrich_data()
     players, observations, assessments = data["players"], data["observations"], data["role_assessments"]
     if players.empty:
         empty_state("Sin ranking", "Añade jugadores y puntúa algún partido para activar el motor.")
         return
 
-    c0, c1, c2, c3 = st.columns([1, 1.4, 1, 1.2])
+    sort_modes = {
+        "Score Heras": "heritage_score", "Nota media": "average_rating", "MVP totales": "mvp_count",
+        "Frecuencia MVP": "mvp_rate", "Prioridad": "decision_score", "Proyección": "projection_score",
+        "Encaje de rol": "role_fit", "Confianza": "confidence", "Consistencia": "consistency",
+    }
+    c0, c1, c2, c3 = st.columns([1, 1.35, 1.25, 1.4])
     position = c0.selectbox("1. Posición", [""] + POSITIONS, key="ranking_position")
     role_options = [""] + roles_for_position(position) if position else [""]
     _sanitize_widget_value("ranking_role", role_options)
-    role_override = c1.selectbox("2. Rol (opcional)", role_options, disabled=not bool(position), key="ranking_role", help="Primero posición; el rol solo refina el análisis.")
-    labels = c2.multiselect("Prioridad", PRIORITY_LABELS)
+    role_override = c1.selectbox("2. Rol (opcional)", role_options, disabled=not bool(position), key="ranking_role", help="El rol solo afina el ranking de esa posición.")
+    ranking_mode = c2.selectbox("3. Ordenar por", list(sort_modes), key="ranking_mode")
     search = c3.text_input("Buscar jugador")
 
     metrics = metrics_table(players, observations, assessments, _weights(), role_override)
@@ -1032,62 +1336,94 @@ def page_rankings() -> None:
     if search:
         df = df[df["display_name"].str.contains(search, case=False, na=False)]
 
-    f1, f2, f3, f4, f5 = st.columns(5)
-    min_confidence = f1.slider("Confianza mínima", 0, 100, 0, 5)
-    min_minutes = f2.number_input("Minutos mínimos", 0, 10000, 0, 30)
-    minimum_observations = f3.number_input("Partidos mínimos", 0, 100, 0, 1)
-    max_age = f4.number_input("Edad máxima", 0, 60, 60, 1)
-    selected_teams = f5.multiselect("Equipo", sorted(x for x in df["current_team"].unique().tolist() if x))
-    only_rated = st.checkbox("Mostrar solo jugadores con nota", value=True)
+    f1, f2, f3, f4 = st.columns(4)
+    labels = f1.multiselect("Prioridad", PRIORITY_LABELS)
+    selected_competitions = f2.multiselect("Competición", sorted(x for x in df.get("competition", pd.Series(dtype=str)).unique().tolist() if x))
+    selected_teams = f3.multiselect("Equipo", sorted(x for x in df["current_team"].unique().tolist() if x))
+    top_n = f4.number_input("Mostrar Top", 5, 500, 50, 5)
+
+    g1, g2, g3, g4, g5, g6 = st.columns(6)
+    min_confidence = g1.slider("Confianza mín.", 0, 100, 0, 5)
+    min_minutes = g2.number_input("Minutos mín.", 0, 10000, 0, 30)
+    minimum_observations = g3.number_input("Partidos mín.", 0, 100, 0, 1)
+    min_rating = g4.number_input("Nota media mín.", 0.0, 10.0, 0.0, .25)
+    min_mvp = g5.number_input("MVP mín.", 0, 100, 0, 1)
+    max_age = g6.number_input("Edad máxima", 0, 60, 60, 1)
+    only_rated = st.checkbox("Mostrar solo jugadores con alguna nota", value=True)
 
     if labels:
         df = df[df["priority_label"].isin(labels)]
+    if selected_competitions and "competition" in df.columns:
+        df = df[df["competition"].isin(selected_competitions)]
     if selected_teams:
         df = df[df["current_team"].isin(selected_teams)]
     ages = pd.to_numeric(df["age"], errors="coerce")
     if max_age < 60:
         df = df[(ages <= max_age) | ages.isna()]
-    df = df[(df["confidence"] >= min_confidence) & (df["total_minutes"] >= min_minutes) & (df["matches_seen"] >= minimum_observations)]
+    df = df[
+        (df["confidence"] >= min_confidence) & (df["total_minutes"] >= min_minutes) &
+        (df["matches_seen"] >= minimum_observations) & (df["average_rating"] >= min_rating) &
+        (df["mvp_count"] >= min_mvp)
+    ]
     if only_rated:
         df = df[df["rated_observations"] > 0]
     if df.empty:
         st.info("No hay jugadores con esos filtros.")
         return
 
-    df = df.copy()
-    df["#"] = df["heritage_score"].rank(method="min", ascending=False).astype(int)
-    tabs = st.tabs(["Tabla Excel", "Rendimiento", "Prioridad", "Encaje de rol", "Confianza", "Segunda observación"])
+    sort_col = sort_modes[ranking_mode]
+    if ranking_mode == "Encaje de rol" and not role_override:
+        st.warning("El encaje es más fiable si eliges primero una posición y un rol concreto.")
+    ranked = df.sort_values([sort_col, "confidence", "heritage_score"], ascending=[False, False, False]).copy()
+    ranked["#"] = range(1, len(ranked) + 1)
+    visible = ranked.head(int(top_n))
+
+    st.subheader(f"Podio · {ranking_mode}")
+    podium = st.columns(3)
+    medals = ["🥇", "🥈", "🥉"]
+    for index, col in enumerate(podium):
+        if index < len(visible):
+            row = visible.iloc[index]
+            col.metric(f"{medals[index]} {row['display_name']}", f"{float(row[sort_col]):.1f}", f"{row.get('current_team','')} · {row.get('primary_position','')}")
+        else:
+            col.metric(medals[index], "—")
+
+    tabs = st.tabs(["Tabla principal", "Rendimiento", "Prioridad", "Rol", "MVP / impacto", "Consistencia", "Segunda observación"])
     with tabs[0]:
-        st.caption("Equivale a Dim_Jugadores + His_Rank: las columnas que usabas, calculadas automáticamente desde cada jugador-partido.")
-        excel_cols = ["#", "display_name", "current_team", "primary_position", "age", "matches_seen", "total_minutes", "average_rating", "mvp_count", "competition_value", "rating_sum", "avg_minutes", "heritage_score", "legacy_raw"]
-        table = df.sort_values(["heritage_score", "confidence"], ascending=[False, False])[[c for c in excel_cols if c in df.columns]].copy()
-        table = table.rename(columns={
-            "display_name":"Jugador", "current_team":"Equipo", "primary_position":"Posición", "age":"Edad",
-            "matches_seen":"PartidosV", "total_minutes":"MinutosTotal", "average_rating":"NotaMedia",
-            "mvp_count":"MVPtot", "competition_value":"Valoración", "rating_sum":"NotaAcum",
-            "avg_minutes":"MinutosPart", "heritage_score":"Score Heras", "legacy_raw":"Rank original",
-        })
-        st.dataframe(table.head(500), use_container_width=True, hide_index=True)
+        cols = ["#", "display_name", "current_team", "competition", "primary_position", "age", "matches_seen", "total_minutes", "average_rating", "mvp_count", "heritage_score", "projection_score", "role_fit", "decision_score", "confidence", "priority_label", "next_action"]
+        st.dataframe(visible[[c for c in cols if c in visible.columns]], use_container_width=True, hide_index=True)
     with tabs[1]:
         cols = ["#", "display_name", "current_team", "primary_position", "matches_seen", "total_minutes", "average_rating", "rating_sum", "mvp_count", "mvp_rate", "competition_value", "avg_minutes", "heritage_score", "performance_adjusted", "consistency", "confidence"]
-        st.dataframe(df.sort_values(["heritage_score", "confidence"], ascending=[False, False])[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+        st.dataframe(visible[[c for c in cols if c in visible.columns]], use_container_width=True, hide_index=True)
     with tabs[2]:
+        priority = df.sort_values(["decision_score", "confidence"], ascending=[False, False]).head(int(top_n))
         cols = ["display_name", "current_team", "primary_position", "decision_score", "base_score", "heritage_score", "projection_score", "potential", "need", "trend", "confidence", "priority_label", "next_action", "alerts_text"]
-        st.dataframe(df.sort_values(["decision_score", "confidence"], ascending=[False, False])[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+        st.dataframe(priority[[c for c in cols if c in priority.columns]], use_container_width=True, hide_index=True)
     with tabs[3]:
         if not role_override:
-            st.info("Selecciona una posición y después un rol para que esta pestaña compare un rol concreto.")
-        cols = ["display_name", "current_team", "primary_position", "role", "role_fit", "heritage_score", "confidence", "total_minutes", "observation_count"]
-        st.dataframe(df.sort_values(["role_fit", "confidence"], ascending=[False, False])[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+            st.info("Selecciona una posición y un rol para comparar la función concreta.")
+        role_table = df.sort_values(["role_fit", "confidence"], ascending=[False, False]).head(int(top_n))
+        cols = ["display_name", "current_team", "primary_position", "role", "role_fit", "heritage_score", "confidence", "total_minutes", "observation_count", "role_source"]
+        st.dataframe(role_table[[c for c in cols if c in role_table.columns]], use_container_width=True, hide_index=True)
     with tabs[4]:
-        cols = ["display_name", "current_team", "confidence", "completeness", "matches_seen", "total_minutes", "avg_minutes", "rated_observations", "observation_count", "alerts_text"]
-        st.dataframe(df.sort_values("confidence", ascending=False)[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+        impact = df.sort_values(["mvp_count", "mvp_rate", "average_rating"], ascending=False).head(int(top_n))
+        cols = ["display_name", "current_team", "primary_position", "matches_seen", "mvp_count", "mvp_rate", "average_rating", "rating_sum", "heritage_score", "confidence"]
+        st.dataframe(impact[[c for c in cols if c in impact.columns]], use_container_width=True, hide_index=True)
     with tabs[5]:
+        consistent = df.sort_values(["consistency", "average_rating", "confidence"], ascending=False).head(int(top_n))
+        cols = ["display_name", "current_team", "primary_position", "consistency", "average_rating", "matches_seen", "total_minutes", "heritage_score", "confidence"]
+        st.dataframe(consistent[[c for c in cols if c in consistent.columns]], use_container_width=True, hide_index=True)
+    with tabs[6]:
         target = df[(df["heritage_score"] >= 68) & (df["confidence"] < 60)]
         st.caption("Buena señal de rendimiento, pero todavía falta evidencia.")
         cols = ["display_name", "current_team", "primary_position", "average_rating", "matches_seen", "total_minutes", "heritage_score", "confidence", "next_action"]
         st.dataframe(target.sort_values(["heritage_score", "confidence"], ascending=[False, True])[[c for c in cols if c in target.columns]], use_container_width=True, hide_index=True)
-    st.scatter_chart(df, x="confidence", y="heritage_score", size="matches_seen", color="priority_label", use_container_width=True)
+
+    st.download_button(
+        "Descargar ranking filtrado CSV", visible.to_csv(index=False).encode("utf-8-sig"),
+        file_name=f"ranking_{normalize_text(ranking_mode).replace(' ', '_')}.csv", mime="text/csv",
+    )
+    st.scatter_chart(visible, x="confidence", y=sort_col, size="matches_seen", color="priority_label", use_container_width=True)
 
 def page_excel_summary() -> None:
     hero("Resumen estilo Excel", "Las cuatro vistas que hacían eficaz tu archivo: hechos, jugadores agregados, equipos y ranking.", "BBDD Personal", "Automático")
@@ -1266,52 +1602,70 @@ def _similarity_tab(role: str, candidates: pd.DataFrame, observations: pd.DataFr
 
 
 def page_lineups() -> None:
-    hero("Constructor de alineaciones", "Selecciona una formación, asigna roles y coloca jugadores. La alineación sirve como shortlist contextual, no como once automático incuestionable.", "Alineación", "Roles")
+    hero("Constructor de alineaciones", "Crea onces o shortlists con más formaciones, roles filtrados por posición y una estructura personalizada cuando ningún dibujo encaja.", "Alineación", "Roles")
     players = enrich_data()["players"]
-    formation = st.selectbox("Formación", list(FORMATION_TEMPLATES))
-    template = FORMATION_TEMPLATES[formation]
+    c1, c2 = st.columns([2, 1])
+    formation = c1.selectbox("Formación", formation_options(), key="lineup_formation")
+    custom_count = c2.number_input("Nº de puestos", 1, 20, 11, 1, disabled=formation != FORMATION_CUSTOM, key="lineup_custom_count")
+    template = _starter_template(formation, int(custom_count))
+    if formation == FORMATION_CUSTOM:
+        # Distribución neutra para que el constructor siga siendo visual aunque el dibujo sea libre.
+        template = [
+            (key, label, 12 + (index % 4) * 25, 12 + (index // 4) * 19)
+            for index, (key, label, _x, _y) in enumerate(template)
+        ]
     if players.empty:
         empty_state("Sin jugadores", "Puedes diseñar la estructura, pero necesitas jugadores para completar los puestos.")
     options = [""] + players["player_id"].astype(str).tolist()
     player_labels = {"": "— Vacío —"}
     player_labels.update(dict(zip(players["player_id"].astype(str), players["display_name"].astype(str))))
     slots: Dict[str, Dict[str, object]] = {}
-    st.caption("Cada puesto permite escoger jugador y rol. Se guarda como una foto de trabajo independiente de la ficha del jugador.")
-    for start in range(0, len(template), 3):
+    st.caption("Cada puesto permite escoger jugador y un rol compatible con su posición principal. La alineación no modifica la ficha ni los partidos.")
+    for start_index in range(0, len(template), 3):
         columns = st.columns(3)
-        for col, (slot_key, slot_label, _x, _y) in zip(columns, template[start:start + 3]):
+        for col, (slot_key, slot_label, _x, _y) in zip(columns, template[start_index:start_index + 3]):
             with col:
                 st.markdown(f"**{slot_label}**")
-                pid = st.selectbox("Jugador", options, format_func=lambda value: player_labels.get(value, value), key=f"lineup_player_{formation}_{slot_key}", label_visibility="collapsed")
-                role = st.selectbox("Rol", [""] + ROLE_NAMES, key=f"lineup_role_{formation}_{slot_key}", label_visibility="collapsed")
+                pid = st.selectbox("Jugador", options, format_func=lambda value: player_labels.get(value, value), key=f"lineup_player_{formation}_{custom_count}_{slot_key}", label_visibility="collapsed")
+                role_options = [""] + ROLE_NAMES
                 score = ""
                 if pid:
                     row = players[players["player_id"].astype(str) == str(pid)].iloc[0]
-                    score = row.get("primary_position", "")
+                    score = str(row.get("primary_position", ""))
+                    role_options = [""] + roles_for_position(score)
+                role = st.selectbox("Rol", role_options, key=f"lineup_role_{formation}_{custom_count}_{slot_key}", label_visibility="collapsed")
+                if pid:
+                    row = players[players["player_id"].astype(str) == str(pid)].iloc[0]
                     slots[slot_key] = {"player": row.get("display_name", ""), "role": role, "score": score, "player_id": pid}
                 else:
                     slots[slot_key] = {"player": slot_label, "role": role, "score": "", "player_id": ""}
-    render_lineup(formation, slots)
-    c1, c2 = st.columns([2, 1])
-    name = c1.text_input("Nombre de la alineación", placeholder="Shortlist 4-2-3-1 · España U21")
-    notes = c2.text_input("Notas")
+    render_lineup(formation, slots, template=template)
+    n1, n2 = st.columns([2, 1])
+    name = n1.text_input("Nombre de la alineación", placeholder="Shortlist 4-2-3-1 · España U21")
+    notes = n2.text_input("Notas")
     if st.button("Guardar alineación", type="primary"):
         if not name.strip():
             st.error("Pon un nombre a la alineación.")
         else:
             lineup_id = append_row("lineups", {"name": name, "formation": formation, "notes": notes})
             for slot_key, slot_label, x, y in template:
-                data = slots.get(slot_key, {})
+                slot_data = slots.get(slot_key, {})
                 append_row("lineup_slots", {
                     "lineup_id": lineup_id, "slot_key": slot_key, "slot_label": slot_label,
-                    "player_id": data.get("player_id", ""), "role_name": data.get("role", ""), "x": x, "y": y,
+                    "player_id": slot_data.get("player_id", ""), "role_name": slot_data.get("role", ""), "x": x, "y": y,
                 })
             st.success("Alineación guardada.")
     saved = load_table("lineups")
     if not saved.empty:
         st.subheader("Alineaciones guardadas")
         st.dataframe(saved[["name", "formation", "notes", "created_at"]].sort_values("created_at", ascending=False), use_container_width=True, hide_index=True)
-
+        delete_id = _select_from_df("Eliminar una alineación", saved.sort_values("created_at", ascending=False), "lineup_id", "name", "delete_lineup")
+        if st.button("Eliminar alineación", disabled=not delete_id, key="delete_lineup_button"):
+            slots_df = load_table("lineup_slots")
+            save_table("lineup_slots", slots_df[slots_df["lineup_id"].astype(str) != str(delete_id)].copy())
+            delete_rows("lineups", [delete_id])
+            st.success("Alineación eliminada.")
+            st.rerun()
 
 def page_research() -> None:
     hero("Investigación", "Convierte tu base en preguntas medibles: cobertura, fuentes, edades, roles y calidad de decisión.", "Análisis", "Preguntas")
@@ -1339,6 +1693,29 @@ def page_research() -> None:
         if not metrics.empty:
             values = metrics["priority_label"].value_counts().reindex(PRIORITY_LABELS, fill_value=0)
             progress_list("Distribución de prioridad", list(zip(values.index.tolist(), values.astype(int).tolist())))
+    st.subheader("Cruces de rendimiento")
+    r1, r2 = st.columns(2)
+    with r1:
+        if not metrics.empty and "competition" in metrics.columns:
+            comp_perf = metrics[metrics["competition"].astype(str).str.strip() != ""].groupby("competition").agg(
+                Jugadores=("player_id", "nunique"), Score_medio=("heritage_score", "mean"),
+                Nota_media=("average_rating", lambda x: pd.to_numeric(x, errors="coerce").replace(0, pd.NA).dropna().mean()),
+                Confianza=("confidence", "mean"), MVP=("mvp_count", "sum"),
+            ).reset_index().sort_values(["Score_medio", "Jugadores"], ascending=False)
+            st.markdown("**Rendimiento por competición**")
+            st.dataframe(comp_perf.round(1), use_container_width=True, hide_index=True)
+    with r2:
+        if not metrics.empty:
+            ages = pd.to_numeric(metrics["age"], errors="coerce")
+            bands = pd.cut(ages, bins=[0, 17, 20, 23, 29, 60], labels=["Sub-18", "18-20", "21-23", "24-29", "30+"])
+            age_view = metrics.assign(Tramo=bands).dropna(subset=["Tramo"]).groupby("Tramo", observed=False).agg(
+                Jugadores=("player_id", "nunique"), Score_medio=("heritage_score", "mean"),
+                Nota_media=("average_rating", lambda x: pd.to_numeric(x, errors="coerce").replace(0, pd.NA).dropna().mean()),
+                Confianza=("confidence", "mean"),
+            ).reset_index()
+            st.markdown("**Rendimiento por tramo de edad**")
+            st.dataframe(age_view.round(1), use_container_width=True, hide_index=True)
+
     st.markdown(
         """
         <div class="panel"><h3>Mapa de preguntas</h3><div class="mini-grid">
@@ -1367,10 +1744,24 @@ def page_data_quality() -> None:
     metrics = metrics_table(players, observations, assessments, _weights())
     kpi_grid([
         ("Duplicados exactos", len(duplicates), "warn" if len(duplicates) else "good"),
+        ("Sin equipo", int((players["current_team"].astype(str).str.strip() == "").sum()), "warn"),
+        ("Sin posición", int((players["primary_position"].astype(str).str.strip() == "").sum()), "warn"),
+        ("Sin edad", int((pd.to_numeric(players["age"], errors="coerce").fillna(0) <= 0).sum()), "warn"),
         ("Observaciones huérfanas", len(orphan_obs), "warn" if len(orphan_obs) else "good"),
         ("Evaluaciones huérfanas", len(orphan_ass), "warn" if len(orphan_ass) else "good"),
+        ("Sin observaciones", int((metrics["observation_count"] <= 0).sum()), "warn"),
         ("Fichas < 50%", int((metrics["completeness"] < 50).sum()), "warn"),
     ])
+    issues = metrics[
+        (metrics["current_team"].astype(str).str.strip() == "") |
+        (metrics["primary_position"].astype(str).str.strip() == "") |
+        (pd.to_numeric(metrics["age"], errors="coerce").fillna(0) <= 0) |
+        (metrics["observation_count"] <= 0)
+    ].copy()
+    if not issues.empty:
+        st.subheader("Fichas que requieren atención")
+        cols = ["display_name", "current_team", "primary_position", "age", "observation_count", "completeness", "alerts_text"]
+        st.dataframe(issues[[c for c in cols if c in issues.columns]].sort_values("completeness"), use_container_width=True, hide_index=True)
     if not duplicates.empty:
         st.dataframe(duplicates[["player_id", "display_name", "normalized_name", "current_team"]], use_container_width=True, hide_index=True)
     st.subheader("Fusionar jugadores")
@@ -1404,8 +1795,8 @@ def page_database() -> None:
 def page_import_export() -> None:
     hero("Importar, exportar y reiniciar", "La base empieza vacía. Exporta un ZIP al terminar cada sesión importante y podrás restaurarlo más adelante.", "Backup", "Portabilidad")
     c1, c2, c3 = st.columns(3)
-    c1.download_button("Backup ZIP", backup_zip_bytes(), file_name="scouting_hub_v11_backup.zip", mime="application/zip", use_container_width=True)
-    c2.download_button("Excel técnico", excel_backup_bytes(), file_name="scouting_hub_v11_raw.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    c1.download_button("Backup ZIP", backup_zip_bytes(), file_name="scouting_hub_v12_backup.zip", mime="application/zip", use_container_width=True)
+    c2.download_button("Excel técnico", excel_backup_bytes(), file_name="scouting_hub_v12_raw.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
     c3.download_button("Excel estilo BBDD", excel_model_bytes(), file_name="BBDD_Personal_Scouting_Hub.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, help="Incluye Hechos_Stats, Dim_Jugadores, Dim_Equipos e His_Rank, además de las tablas técnicas.")
     st.subheader("Plantillas CSV vacías")
     columns = st.columns(3)
@@ -1454,6 +1845,17 @@ def page_settings() -> None:
     saved = settings.get("scoring_weights", {})
     if isinstance(saved, dict):
         current.update({key: value for key, value in saved.items() if key in current})
+    st.subheader("Perfiles de scoring")
+    p1, p2, p3 = st.columns(3)
+    if p1.button("Excel simple", use_container_width=True, help="Máximo peso a nota, minutos, MVP y nivel competitivo."):
+        settings["scoring_weights"] = {"heritage": .80, "role_fit": .05, "potential": .05, "need": .05, "trend": .05}
+        save_settings(settings); st.rerun()
+    if p2.button("Equilibrado", use_container_width=True, help="Configuración recomendada para scouting general."):
+        settings["scoring_weights"] = DEFAULT_SCORING_WEIGHTS.copy()
+        save_settings(settings); st.rerun()
+    if p3.button("Proyección", use_container_width=True, help="Aumenta potencial y encaje sin eliminar la evidencia observada."):
+        settings["scoring_weights"] = {"heritage": .45, "role_fit": .15, "potential": .25, "need": .10, "trend": .05}
+        save_settings(settings); st.rerun()
     with st.form("scoring_settings"):
         c1, c2, c3, c4, c5 = st.columns(5)
         heritage = c1.number_input("Score Heras", 0.0, 1.0, float(current["heritage"]), .05)

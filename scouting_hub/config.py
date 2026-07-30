@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-APP_TITLE = "Scouting Hub v1.1"
-APP_SUBTITLE = "Partido → nota → ranking, con la sencillez del Excel"
+APP_TITLE = "Scouting Hub v1.2"
+APP_SUBTITLE = "Partido → once flexible → nota/MVP → ranking"
 
 POSITIONS = ["POR", "LD", "DFC", "LI", "CAD", "CAI", "MCD", "MC", "MP", "ED", "EI", "SD", "DC"]
 FOOTS = ["", "Derecha", "Izquierda", "Ambas"]
@@ -276,6 +276,10 @@ DEFAULT_SCORING_WEIGHTS = {
     "trend": 0.05,
 }
 
+FORMATION_CUSTOM = "Personalizada"
+
+# Formaciones de uso habitual. Todas son solo plantillas de entrada: la columna
+# Titular se puede cambiar y la opción Personalizada permite cualquier dibujo.
 FORMATION_TEMPLATES: Dict[str, List[Tuple[str, str, int, int]]] = {
     "4-3-3": [
         ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
@@ -289,11 +293,77 @@ FORMATION_TEMPLATES: Dict[str, List[Tuple[str, str, int, int]]] = {
         ("LDM", "Pivote I", 45, 38), ("RW", "Extremo D", 70, 83), ("AM", "Mediapunta", 70, 50),
         ("LW", "Extremo I", 70, 17), ("ST", "Delantero", 90, 50),
     ],
+    "4-4-2": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("RM", "Banda D", 55, 84),
+        ("RCM", "Medio D", 52, 61), ("LCM", "Medio I", 52, 39), ("LM", "Banda I", 55, 16),
+        ("RST", "Delantero D", 86, 62), ("LST", "Delantero I", 86, 38),
+    ],
+    "4-1-4-1": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("DM", "Pivote", 42, 50),
+        ("RM", "Banda D", 61, 84), ("RCM", "Interior D", 58, 62), ("LCM", "Interior I", 58, 38),
+        ("LM", "Banda I", 61, 16), ("ST", "Delantero", 89, 50),
+    ],
+    "4-3-1-2": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("DM", "Pivote", 43, 50),
+        ("RCM", "Interior D", 56, 65), ("LCM", "Interior I", 56, 35), ("AM", "Mediapunta", 70, 50),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
+    "4-3-2-1": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("DM", "Pivote", 43, 50),
+        ("RCM", "Interior D", 56, 66), ("LCM", "Interior I", 56, 34), ("RAM", "MP derecho", 72, 63),
+        ("LAM", "MP izquierdo", 72, 37), ("ST", "Delantero", 90, 50),
+    ],
+    "4-4-1-1": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("RM", "Banda D", 55, 84),
+        ("RCM", "Medio D", 52, 61), ("LCM", "Medio I", 52, 39), ("LM", "Banda I", 55, 16),
+        ("SS", "Segundo punta", 72, 50), ("ST", "Delantero", 89, 50),
+    ],
+    "4-1-2-1-2 (rombo)": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("DM", "Pivote", 42, 50),
+        ("RCM", "Interior D", 57, 66), ("LCM", "Interior I", 57, 34), ("AM", "Mediapunta", 70, 50),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
+    "4-2-2-2": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("RDM", "Pivote D", 45, 62),
+        ("LDM", "Pivote I", 45, 38), ("RAM", "MP derecho", 68, 68), ("LAM", "MP izquierdo", 68, 32),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
     "3-4-3": [
         ("GK", "Portero", 7, 50), ("RCB", "Central D", 22, 70), ("CB", "Central", 20, 50),
         ("LCB", "Central I", 22, 30), ("RWB", "Carrilero D", 48, 88), ("RCM", "Medio D", 50, 62),
         ("LCM", "Medio I", 50, 38), ("LWB", "Carrilero I", 48, 12), ("RW", "Extremo D", 78, 78),
         ("LW", "Extremo I", 78, 22), ("ST", "Delantero", 91, 50),
+    ],
+    "3-4-2-1": [
+        ("GK", "Portero", 7, 50), ("RCB", "Central D", 22, 70), ("CB", "Central", 20, 50),
+        ("LCB", "Central I", 22, 30), ("RWB", "Carrilero D", 48, 88), ("RCM", "Medio D", 50, 62),
+        ("LCM", "Medio I", 50, 38), ("LWB", "Carrilero I", 48, 12), ("RAM", "MP derecho", 72, 65),
+        ("LAM", "MP izquierdo", 72, 35), ("ST", "Delantero", 90, 50),
+    ],
+    "3-4-1-2": [
+        ("GK", "Portero", 7, 50), ("RCB", "Central D", 22, 70), ("CB", "Central", 20, 50),
+        ("LCB", "Central I", 22, 30), ("RWB", "Carrilero D", 48, 88), ("RCM", "Medio D", 50, 62),
+        ("LCM", "Medio I", 50, 38), ("LWB", "Carrilero I", 48, 12), ("AM", "Mediapunta", 69, 50),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
+    "3-5-2": [
+        ("GK", "Portero", 7, 50), ("RCB", "Central D", 22, 70), ("CB", "Central", 20, 50),
+        ("LCB", "Central I", 22, 30), ("RWB", "Carrilero D", 48, 88), ("DM", "Pivote", 44, 50),
+        ("RCM", "Interior D", 57, 64), ("LCM", "Interior I", 57, 36), ("LWB", "Carrilero I", 48, 12),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
+    "3-1-4-2": [
+        ("GK", "Portero", 7, 50), ("RCB", "Central D", 22, 70), ("CB", "Central", 20, 50),
+        ("LCB", "Central I", 22, 30), ("DM", "Pivote", 39, 50), ("RM", "Banda D", 57, 85),
+        ("RCM", "Interior D", 56, 62), ("LCM", "Interior I", 56, 38), ("LM", "Banda I", 57, 15),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
     ],
     "5-4-1": [
         ("GK", "Portero", 7, 50), ("RWB", "Carrilero D", 30, 88), ("RCB", "Central D", 22, 68),
@@ -301,12 +371,31 @@ FORMATION_TEMPLATES: Dict[str, List[Tuple[str, str, int, int]]] = {
         ("RM", "Banda D", 57, 82), ("RCM", "Medio D", 52, 60), ("LCM", "Medio I", 52, 40),
         ("LM", "Banda I", 57, 18), ("ST", "Delantero", 89, 50),
     ],
+    "5-3-2": [
+        ("GK", "Portero", 7, 50), ("RWB", "Carrilero D", 30, 88), ("RCB", "Central D", 22, 68),
+        ("CB", "Central", 20, 50), ("LCB", "Central I", 22, 32), ("LWB", "Carrilero I", 30, 12),
+        ("DM", "Pivote", 46, 50), ("RCM", "Interior D", 57, 63), ("LCM", "Interior I", 57, 37),
+        ("RST", "Delantero D", 87, 62), ("LST", "Delantero I", 87, 38),
+    ],
+    "5-2-3": [
+        ("GK", "Portero", 7, 50), ("RWB", "Carrilero D", 30, 88), ("RCB", "Central D", 22, 68),
+        ("CB", "Central", 20, 50), ("LCB", "Central I", 22, 32), ("LWB", "Carrilero I", 30, 12),
+        ("RCM", "Medio D", 51, 62), ("LCM", "Medio I", 51, 38), ("RW", "Extremo D", 78, 80),
+        ("LW", "Extremo I", 78, 20), ("ST", "Delantero", 90, 50),
+    ],
+    "4-5-1": [
+        ("GK", "Portero", 7, 50), ("RB", "Lateral D", 25, 85), ("RCB", "Central D", 22, 62),
+        ("LCB", "Central I", 22, 38), ("LB", "Lateral I", 25, 15), ("RM", "Banda D", 58, 84),
+        ("RCM", "Medio D", 53, 63), ("CM", "Medio", 53, 50), ("LCM", "Medio I", 53, 37),
+        ("LM", "Banda I", 58, 16), ("ST", "Delantero", 89, 50),
+    ],
 }
 
 
 FORMATION_SLOT_POSITIONS = {
     "GK": "POR", "RB": "LD", "RCB": "DFC", "CB": "DFC", "LCB": "DFC", "LB": "LI",
     "RWB": "CAD", "LWB": "CAI", "DM": "MCD", "RDM": "MCD", "LDM": "MCD",
-    "RCM": "MC", "LCM": "MC", "RM": "ED", "LM": "EI", "AM": "MP",
-    "RW": "ED", "LW": "EI", "ST": "DC",
+    "RCM": "MC", "CM": "MC", "LCM": "MC", "RM": "ED", "LM": "EI", "AM": "MP",
+    "RAM": "MP", "LAM": "MP", "RW": "ED", "LW": "EI", "SS": "SD",
+    "ST": "DC", "RST": "DC", "LST": "DC",
 }

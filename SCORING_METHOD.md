@@ -1,30 +1,34 @@
-# Método de scoring v1.1
+# Método de scoring v1.2
 
-## Capa 1 — Score Heras (rendimiento)
+La aplicación separa rendimiento, proyección, encaje y confianza.
 
-Mantiene los elementos del Excel original:
+## Score Heras
 
-- nota media y nota acumulada;
-- partidos vistos;
-- minutos totales y minutos por partido;
-- MVP y frecuencia de MVP;
-- valor competitivo 1-50;
-- ajuste mínimo de edad.
+Mantiene la lógica útil del Excel personal:
 
-La fórmula original se sigue calculando como `Rank original`, pero el ranking operativo usa una escala 0-100 con prior bayesiano y retornos decrecientes.
+- nota media;
+- partidos y minutos;
+- MVP;
+- valor competitivo;
+- participación media;
+- ajuste moderado de edad.
 
-## Capa 2 — Confianza
+El resultado se normaliza entre 0 y 100 para evitar que un MVP o una edad baja disparen la fórmula.
 
-Partidos, minutos, fiabilidad, diversidad del visionado, consistencia y completitud. No convierte al jugador en mejor; indica cuánto creer la valoración.
+## Prioridad
 
-## Capa 3 — Prioridad
+La prioridad combina:
 
-Por defecto:
+- Score Heras;
+- encaje de rol;
+- potencial manual;
+- necesidad posicional;
+- tendencia.
 
-- 60% Score Heras;
-- 15% encaje de rol;
-- 10% potencial manual;
-- 10% necesidad posicional;
-- 5% tendencia.
+La confianza actúa como freno: una señal alta con poca muestra exige otra observación en lugar de convertirse automáticamente en prioridad A.
 
-La prioridad final se contrae hacia 50 cuando la confianza es baja.
+## Perfiles disponibles
+
+- **Excel simple:** máxima importancia al rendimiento observado.
+- **Equilibrado:** configuración recomendada.
+- **Proyección:** mayor peso de potencial y encaje.
