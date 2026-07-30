@@ -1,4 +1,4 @@
-# Scouting Hub v0.8
+# Scouting Hub v0.8.1
 
 Aplicación Streamlit para construir una base propia de scouting desde cero.
 

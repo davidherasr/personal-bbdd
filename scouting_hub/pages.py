@@ -36,8 +36,34 @@ def _message(created: bool, message: str) -> None:
     (st.success if created else st.info)(message)
 
 
+def _queue_widget_value(key: str, value: str) -> None:
+    """Queue a widget value for the next rerun.
+
+    Streamlit does not allow changing a widget-backed session_state key after
+    that widget has been instantiated in the current run. Saving the value
+    under a non-widget key and consuming it before the next widget declaration
+    keeps the selectors predictable and compatible with recent Streamlit
+    versions.
+    """
+    st.session_state[f"__pending__{key}"] = value
+
+
+def _apply_queued_widget_value(key: str) -> None:
+    pending_key = f"__pending__{key}"
+    if pending_key in st.session_state:
+        st.session_state[key] = st.session_state.pop(pending_key)
+
+
+def _sanitize_widget_value(key: str, options: List[str]) -> None:
+    """Reset stale dependent selections before their widget is rendered."""
+    if key in st.session_state and st.session_state[key] not in options:
+        st.session_state[key] = options[0] if options else ""
+
+
 def _select_from_df(label: str, df: pd.DataFrame, id_col: str, name_col: str, key: str, empty_label: str = "— Seleccionar —") -> str:
+    _apply_queued_widget_value(key)
     options = [""] + df[id_col].astype(str).tolist() if not df.empty else [""]
+    _sanitize_widget_value(key, options)
     labels = {"": empty_label}
     if not df.empty:
         labels.update(dict(zip(df[id_col].astype(str), df[name_col].astype(str))))
@@ -54,7 +80,7 @@ def country_selector(label: str, key: str, allow_add: bool = True) -> str:
                 cid, created, message = add_country(name)
                 _message(created, message)
                 if cid:
-                    st.session_state[key] = cid
+                    _queue_widget_value(key, cid)
                 st.rerun()
     return selected
 
@@ -69,6 +95,8 @@ def competition_selector(label: str, country_id: str, key: str, allow_add: bool 
     for _, row in competitions.iterrows():
         suffix = " · ".join(x for x in [str(row.get("level", "")), str(row.get("season", ""))] if x)
         labels[str(row["competition_id"])] = f"{row['name']}{' · ' + suffix if suffix else ''}"
+    _apply_queued_widget_value(key)
+    _sanitize_widget_value(key, options)
     selected = st.selectbox(label, options, format_func=lambda value: labels.get(value, value), key=key)
     if allow_add and country_id:
         with st.expander("+ Añadir competición"):
@@ -80,7 +108,7 @@ def competition_selector(label: str, country_id: str, key: str, allow_add: bool 
                 cid, created, message = add_competition(name, country_id, level, season)
                 _message(created, message)
                 if cid:
-                    st.session_state[key] = cid
+                    _queue_widget_value(key, cid)
                 st.rerun()
     return selected
 
@@ -102,7 +130,7 @@ def team_selector(label: str, team_type: str, country_id: str, competition_id: s
                 tid, created, message = add_team(name, team_type, country_id, competition_id)
                 _message(created, message)
                 if tid:
-                    st.session_state[key] = tid
+                    _queue_widget_value(key, tid)
                 st.rerun()
     return selected
 
@@ -226,7 +254,13 @@ def page_workflow() -> None:
             st.success(f"Creados: {created}. Ya existentes: {skipped}.")
             st.rerun()
 
-    mode = st.segmented_control("Acción", ["Observar existente", "Crear jugador"], default="Observar existente")
+    _apply_queued_widget_value("wf_action")
+    mode = st.segmented_control(
+        "Acción",
+        ["Observar existente", "Crear jugador"],
+        default="Observar existente",
+        key="wf_action",
+    )
     selected_player = ""
     if mode == "Observar existente":
         selected_player = player_selector("Jugador", "wf_player", team_id=team_id)
@@ -264,8 +298,8 @@ def page_workflow() -> None:
                 )
                 _message(created, message)
                 if pid:
-                    st.session_state["wf_player"] = pid
-                    selected_player = pid
+                    _queue_widget_value("wf_action", "Observar existente")
+                    _queue_widget_value("wf_player", pid)
                 st.rerun()
 
     if selected_player:
