@@ -194,6 +194,92 @@ def consistency_score(observations: pd.DataFrame) -> int:
     return int(round(clamp(100.0 - std * 22.0)))
 
 
+
+def _truthy(value: object) -> bool:
+    return normalize_text(value) in {"si", "sí", "true", "1", "yes", "x", "mvp"}
+
+
+def observation_match_rating(row: pd.Series) -> Optional[float]:
+    """Return a 0-10 match rating, using the global mark or the available macros."""
+    global_rating = num(row.get("global_rating"))
+    if global_rating is not None and global_rating > 0:
+        return global_rating
+    ratings = [num(row.get(col)) for col in ["technical_rating", "tactical_rating", "physical_rating", "mental_rating"]]
+    usable = [value for value in ratings if value is not None and value > 0]
+    return sum(usable) / len(usable) if usable else None
+
+
+def heritage_metrics(player: pd.Series, observations: pd.DataFrame) -> Dict[str, float]:
+    """Resumen equivalente a ``Dim_Jugadores`` del Excel y Score Heras 0-100.
+
+    Conserva las señales que hacían útil la hoja original: partidos vistos,
+    minutos, nota acumulada y media, MVP, valor competitivo, minutos por
+    partido y edad. El ``legacy_raw`` reproduce la fórmula histórica; el
+    ``heritage_score`` la regulariza para que un MVP o una sola actuación no
+    multipliquen el ranking de forma desproporcionada.
+    """
+    empty = {
+        "matches_seen": 0.0, "total_minutes": 0.0, "avg_minutes": 0.0,
+        "average_rating": 0.0, "rating_sum": 0.0, "rated_observations": 0.0,
+        "mvp_count": 0.0, "mvp_rate": 0.0, "competition_value": 30.0,
+        "heritage_score": 0.0, "performance_adjusted": 0.0, "legacy_raw": 0.0,
+    }
+    if observations.empty:
+        return empty
+
+    match_ids = observations.get("match_id", pd.Series(dtype=str)).astype(str).replace("", pd.NA).dropna()
+    matches_seen = int(match_ids.nunique()) if not match_ids.empty else len(observations)
+    minutes_series = pd.to_numeric(observations.get("minutes_observed", pd.Series(dtype=float)), errors="coerce").fillna(0)
+    total_minutes = float(minutes_series.sum())
+    avg_minutes = total_minutes / max(matches_seen, 1)
+
+    ratings = [observation_match_rating(row) for _, row in observations.iterrows()]
+    ratings = [float(value) for value in ratings if value is not None and value > 0]
+    rating_sum = float(sum(ratings))
+    rated_observations = len(ratings)
+    average_rating = rating_sum / rated_observations if rated_observations else 0.0
+
+    mvp_count = int(sum(_truthy(value) for value in observations.get("mvp", pd.Series(dtype=str)).tolist()))
+    mvp_rate = mvp_count / max(matches_seen, 1)
+    comp_values = pd.to_numeric(observations.get("competition_value", pd.Series(dtype=float)), errors="coerce").dropna()
+    comp_values = comp_values[(comp_values > 0) & (comp_values <= 50)]
+    competition_value = float(comp_values.mean()) if not comp_values.empty else 30.0
+    age = num(player.get("age"), 25.0) or 25.0
+
+    if average_rating <= 0:
+        return {
+            **empty, "matches_seen": float(matches_seen), "total_minutes": total_minutes,
+            "avg_minutes": avg_minutes, "mvp_count": float(mvp_count),
+            "mvp_rate": mvp_rate, "competition_value": competition_value,
+        }
+
+    # Prior bayesiano: dos partidos neutros a 6.0. La primera nota cuenta,
+    # pero no decide por sí sola todo el ranking.
+    smoothed_rating = (rating_sum + 6.0 * 2.0) / (rated_observations + 2.0)
+    rating_score = clamp(smoothed_rating * 10.0)
+
+    # Las mismas señales del Excel, con retornos decrecientes.
+    mvp_bonus = min(11.0, 5.0 * math.log1p(mvp_count) + 7.0 * min(mvp_rate, 0.60))
+    competition_factor = 0.76 + 0.24 * clamp(competition_value, 1, 50) / 50.0
+    minutes_factor = 0.84 + 0.16 * min(max(avg_minutes, 0.0), 90.0) / 90.0
+    age_factor = 1.0 + clamp((25.0 - age) * 0.003, -0.04, 0.04)
+    evidence_bonus = min(8.0, 2.4 * math.log1p(matches_seen) + 1.2 * math.log1p(total_minutes / 90.0))
+
+    score = clamp((rating_score + mvp_bonus) * competition_factor * minutes_factor * age_factor + evidence_bonus)
+    legacy_raw = average_rating * (mvp_count + 1) * competition_value * max(avg_minutes, 1.0) * max(50.0 - age, 1.0)
+    # Esta puntuación es solo rendimiento suavizado por la confianza de muestra.
+    sample_confidence = clamp(20.0 + 25.0 * min(matches_seen / 3.0, 1.0) + 30.0 * min(total_minutes / 270.0, 1.0) + 25.0 * min(rated_observations / 3.0, 1.0))
+    performance_adjusted = adjusted_decision_score(score, sample_confidence)
+
+    return {
+        "matches_seen": float(matches_seen), "total_minutes": total_minutes,
+        "avg_minutes": avg_minutes, "average_rating": average_rating,
+        "rating_sum": rating_sum, "rated_observations": float(rated_observations),
+        "mvp_count": float(mvp_count), "mvp_rate": mvp_rate,
+        "competition_value": competition_value, "heritage_score": score,
+        "performance_adjusted": performance_adjusted, "legacy_raw": legacy_raw,
+    }
+
 def confidence_score(player: pd.Series, observations: pd.DataFrame, role_assessments: pd.DataFrame) -> int:
     obs_count = len(observations)
     minutes = float(pd.to_numeric(observations.get("minutes_observed", pd.Series(dtype=float)), errors="coerce").fillna(0).sum()) if not observations.empty else 0.0
@@ -265,22 +351,28 @@ def scoring_breakdown(
     need = need_score(player)
     trend = trend_score(observations)
     confidence = confidence_score(player, observations, role_assessments)
+    heritage = heritage_metrics(player, observations)
     score_weights = dict(DEFAULT_SCORING_WEIGHTS)
     if weights:
         score_weights.update({k: float(v) for k, v in weights.items() if k in score_weights})
     total_weight = sum(score_weights.values()) or 1.0
     normalized = {k: v / total_weight for k, v in score_weights.items()}
     base = (
-        level * normalized["level"] + role_fit * normalized["role_fit"] +
+        heritage["heritage_score"] * normalized["heritage"] + role_fit * normalized["role_fit"] +
         potential * normalized["potential"] + need * normalized["need"] + trend * normalized["trend"]
     )
     adjusted = adjusted_decision_score(base, confidence)
+    age = num(player.get("age"), 25.0) or 25.0
+    age_projection = clamp((24.0 - age) * 0.65, -5.0, 5.0)
+    projection = clamp(float(heritage["heritage_score"]) * 0.72 + potential * 0.28 + age_projection)
     label = priority_label(base, adjusted, confidence)
     action = next_action(level, role_fit, base, confidence)
     completion = profile_completeness(player, len(observations), len(role_assessments))
 
     positive: List[str] = []
     alerts: List[str] = []
+    if heritage["heritage_score"] >= 75:
+        positive.append(f"score Heras {round(heritage['heritage_score'])}")
     if level >= 75:
         positive.append(f"nivel observado {level}")
     if role_fit >= 75:
@@ -313,6 +405,19 @@ def scoring_breakdown(
     return {
         "role": selected_role,
         "level": int(round(level)),
+        "heritage_score": round(float(heritage["heritage_score"]), 1),
+        "average_rating": round(float(heritage["average_rating"]), 2),
+        "rating_sum": round(float(heritage["rating_sum"]), 2),
+        "rated_observations": int(heritage["rated_observations"]),
+        "matches_seen": int(heritage["matches_seen"]),
+        "total_minutes": int(heritage["total_minutes"]),
+        "avg_minutes": round(float(heritage["avg_minutes"]), 1),
+        "mvp_count": int(heritage["mvp_count"]),
+        "mvp_rate": round(float(heritage["mvp_rate"]) * 100.0, 1),
+        "competition_value": round(float(heritage["competition_value"]), 1),
+        "performance_adjusted": round(float(heritage["performance_adjusted"]), 1),
+        "projection_score": round(float(projection), 1),
+        "legacy_raw": round(float(heritage["legacy_raw"]), 1),
         "role_fit": int(round(role_fit)),
         "potential": int(round(potential)),
         "need": int(round(need)),
@@ -328,7 +433,7 @@ def scoring_breakdown(
         "criteria": criteria,
         "role_source": role_source,
         "observation_count": len(observations),
-        "minutes": int(pd.to_numeric(observations.get("minutes_observed", pd.Series(dtype=float)), errors="coerce").fillna(0).sum()) if not observations.empty else 0,
+        "minutes": int(heritage["total_minutes"]),
         "consistency": consistency_score(observations),
     }
 

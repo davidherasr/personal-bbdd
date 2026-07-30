@@ -6,7 +6,7 @@ from .config import APP_SUBTITLE, APP_TITLE
 from .pages import (
     page_dashboard, page_data_quality, page_database, page_import_export, page_lineups,
     page_matches, page_observations, page_players, page_rankings, page_research,
-    page_role_lab, page_settings, page_workflow,
+    page_role_lab, page_settings, page_workflow, page_excel_summary,
 )
 from .storage import ensure_storage
 from .visuals import inject_css
@@ -21,13 +21,14 @@ def run() -> None:
     pages = {
         "Trabajo diario": [
             st.Page(page_dashboard, title="Dashboard", icon="🏠"),
-            st.Page(page_workflow, title="Alta rápida", icon="➕"),
-            st.Page(page_matches, title="Partidos", icon="📅"),
-            st.Page(page_observations, title="Observaciones", icon="📝"),
+            st.Page(page_matches, title="Registrar partido", icon="⚽"),
+            st.Page(page_workflow, title="Alta y plantilla", icon="➕"),
+            st.Page(page_observations, title="Observación individual", icon="📝"),
         ],
         "Análisis": [
-            st.Page(page_players, title="Jugadores", icon="👤"),
+            st.Page(page_players, title="Jugadores / Editar", icon="👤"),
             st.Page(page_rankings, title="Rankings", icon="🏅"),
+            st.Page(page_excel_summary, title="Resumen estilo Excel", icon="📊"),
             st.Page(page_role_lab, title="Laboratorio de roles", icon="🧪"),
             st.Page(page_lineups, title="Alineaciones", icon="📋"),
             st.Page(page_research, title="Investigación", icon="🔎"),

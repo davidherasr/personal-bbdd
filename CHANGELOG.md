@@ -1,18 +1,15 @@
 # Changelog
 
-## v0.8
+## v1.0
 
-- Base completamente vacía.
-- Eliminados todos los datos semilla.
-- Refactor modular de la aplicación.
-- Nuevo laboratorio de roles.
-- Nuevo radar SVG sin librerías gráficas externas.
-- Percentiles y similitud por criterios de rol.
-- Constructor de alineaciones.
-- Ranking con shrinkage hacia la neutralidad.
-- Potencial sin bonificación automática por edad.
-- Confianza separada del nivel.
-- Evaluaciones detalladas por rol en tabla independiente.
-- IDs UUID cortos para reducir colisiones al importar.
-- Escritura atómica y snapshots preventivos.
-- Importación compatible con ZIP/Excel/CSV y migración básica desde v0.7.
+- Integración completa de la lógica útil de `BBDD Personal 2026`.
+- Mesa de partido simplificada y precarga de valoraciones existentes.
+- Ambos equipos disponibles dentro del mismo partido.
+- Crear partido y abrirlo automáticamente para puntuar.
+- Tabla Excel con PartidosV, MinutosTotal, NotaMedia, MVPtot, Valoración, NotaAcum, MinutosPart y rank.
+- Nueva página Resumen estilo Excel con cuatro vistas equivalentes a las hojas originales.
+- Edición rápida masiva de jugadores y equipos.
+- Edición de jugador accesible desde cualquier contexto.
+- Ranking posición → rol, con rol opcional.
+- Score Heras con mayor peso del rendimiento y MVP con retornos decrecientes.
+- CSV iniciales completamente vacíos.

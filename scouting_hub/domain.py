@@ -28,7 +28,7 @@ def add_country(name: str) -> Tuple[str, bool, str]:
     return cid, True, "País añadido."
 
 
-def add_competition(name: str, country_id: str, level: str = "", season: str = "") -> Tuple[str, bool, str]:
+def add_competition(name: str, country_id: str, level: str = "", season: str = "", ranking_value: object = "") -> Tuple[str, bool, str]:
     name = str(name).strip()
     if not name or not country_id:
         return "", False, "Falta país o competición."
@@ -37,7 +37,7 @@ def add_competition(name: str, country_id: str, level: str = "", season: str = "
     existing = competitions[(competitions["country_id"].astype(str) == str(country_id)) & (competitions["normalized_name"].astype(str) == norm)]
     if not existing.empty:
         return str(existing.iloc[0]["competition_id"]), False, f"Ya existe como {existing.iloc[0]['name']}."
-    cid = append_row("competitions", {"name": name, "normalized_name": norm, "country_id": country_id, "level": level, "season": season})
+    cid = append_row("competitions", {"name": name, "normalized_name": norm, "country_id": country_id, "level": level, "season": season, "ranking_value": ranking_value})
     return cid, True, "Competición añadida."
 
 
@@ -142,6 +142,34 @@ def add_observation(**kwargs: object) -> Tuple[str, bool, str]:
     return oid, True, "Observación guardada."
 
 
+
+
+def save_match_observation(**kwargs: object) -> Tuple[str, bool, str]:
+    """Create or update the observation for one player in one match.
+
+    The match desk is designed for repeated edits while watching a game. Using
+    an upsert prevents duplicate rows each time the user corrects a rating.
+    """
+    player_id = str(kwargs.get("player_id", ""))
+    match_id = str(kwargs.get("match_id", ""))
+    team_id = str(kwargs.get("team_id", ""))
+    if not player_id or not match_id:
+        return "", False, "Falta jugador o partido."
+    observations = load_table("observations")
+    mask = (
+        (observations["player_id"].astype(str) == player_id)
+        & (observations["match_id"].astype(str) == match_id)
+        & (observations["team_id"].astype(str) == team_id)
+    )
+    existing = observations[mask]
+    if not existing.empty:
+        observation_id = str(existing.iloc[0]["observation_id"])
+        update_row("observations", observation_id, kwargs)
+        return observation_id, False, "Observación actualizada."
+    observation_id = append_row("observations", kwargs)
+    return observation_id, True, "Observación creada."
+
+
 def save_role_assessment(player_id: str, match_id: str, role_name: str, values: Dict[str, Tuple[str, object, str]]) -> int:
     assessments = load_table("role_assessments")
     # Reemplaza la evaluación del mismo jugador/partido/rol para evitar duplicar cada edición.
@@ -197,11 +225,30 @@ def enrich_data() -> Dict[str, pd.DataFrame]:
     observations_view["team"] = observations_view["team_id"].map(team_map).fillna("")
     match_map = dict(zip(matches_view["match_id"], matches_view["match_name"]))
     observations_view["match"] = observations_view["match_id"].map(match_map).fillna("")
+    match_competition_map = dict(zip(matches["match_id"], matches["competition_id"]))
+    competition_value_map = dict(zip(competitions["competition_id"], competitions.get("ranking_value", pd.Series(dtype=str))))
+    observations_view["competition_id"] = observations_view["match_id"].map(match_competition_map).fillna("")
+    observations_view["competition_value"] = observations_view["competition_id"].map(competition_value_map).fillna("")
     return {
         "countries": countries, "competitions": competitions_view, "teams": teams_view,
         "players": players_view, "matches": matches_view, "observations": observations_view,
         "role_assessments": role_assessments,
     }
+
+
+
+
+def delete_player_cascade(player_id: str) -> int:
+    """Delete a player and all dependent records."""
+    from .storage import delete_rows
+    deleted = delete_rows("players", [player_id])
+    if not deleted:
+        return 0
+    for table in ["observations", "role_assessments", "aliases", "lineup_slots"]:
+        df = load_table(table)
+        if "player_id" in df.columns:
+            save_table(table, df[df["player_id"].astype(str) != str(player_id)].copy())
+    return deleted
 
 
 def merge_players(keep_id: str, merge_id: str) -> None:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-APP_TITLE = "Scouting Hub v0.8"
-APP_SUBTITLE = "Base propia, scoring por rol y decisiones con confianza"
+APP_TITLE = "Scouting Hub v1.0"
+APP_SUBTITLE = "Partido → nota → ranking, con la sencillez del Excel"
 
 POSITIONS = ["POR", "LD", "DFC", "LI", "CAD", "CAI", "MCD", "MC", "MP", "ED", "EI", "SD", "DC"]
 FOOTS = ["", "Derecha", "Izquierda", "Ambas"]
@@ -20,7 +20,7 @@ PRIORITY_LABELS = ["A", "B+", "B", "C", "D"]
 
 SCHEMAS: Dict[str, List[str]] = {
     "countries": ["country_id", "name", "normalized_name", "created_at"],
-    "competitions": ["competition_id", "name", "normalized_name", "country_id", "level", "season", "created_at"],
+    "competitions": ["competition_id", "name", "normalized_name", "country_id", "level", "season", "ranking_value", "created_at"],
     "teams": ["team_id", "name", "normalized_name", "team_type", "country_id", "competition_id", "created_at"],
     "players": [
         "player_id", "display_name", "normalized_name", "birth_date", "age", "nationality_id",
@@ -30,13 +30,13 @@ SCHEMAS: Dict[str, List[str]] = {
     ],
     "matches": [
         "match_id", "match_date", "competition_id", "home_team_id", "away_team_id", "season",
-        "context", "score_home", "score_away", "analyzed", "created_at",
+        "context", "score_home", "score_away", "analyzed", "home_formation", "away_formation", "created_at",
     ],
     "observations": [
         "observation_id", "player_id", "match_id", "team_id", "observed_position", "role",
         "minutes_observed", "viewing_type", "opposition_level", "match_difficulty", "reliability",
         "trend", "technical_rating", "tactical_rating", "physical_rating", "mental_rating",
-        "global_rating", "positive_notes", "improvement_notes", "next_step", "created_at",
+        "global_rating", "starter", "mvp", "positive_notes", "improvement_notes", "next_step", "created_at",
     ],
     "role_assessments": [
         "assessment_id", "player_id", "match_id", "role_name", "criterion_key", "criterion_label",
@@ -268,11 +268,12 @@ ROLE_PROFILES: Dict[str, Dict[str, object]] = {
 ROLE_NAMES = list(ROLE_PROFILES.keys())
 
 DEFAULT_SCORING_WEIGHTS = {
-    "level": 0.35,
-    "role_fit": 0.25,
-    "potential": 0.20,
+    # El rendimiento observado es el núcleo, como en la BBDD Excel original.
+    "heritage": 0.60,
+    "role_fit": 0.15,
+    "potential": 0.10,
     "need": 0.10,
-    "trend": 0.10,
+    "trend": 0.05,
 }
 
 FORMATION_TEMPLATES: Dict[str, List[Tuple[str, str, int, int]]] = {
@@ -300,4 +301,12 @@ FORMATION_TEMPLATES: Dict[str, List[Tuple[str, str, int, int]]] = {
         ("RM", "Banda D", 57, 82), ("RCM", "Medio D", 52, 60), ("LCM", "Medio I", 52, 40),
         ("LM", "Banda I", 57, 18), ("ST", "Delantero", 89, 50),
     ],
+}
+
+
+FORMATION_SLOT_POSITIONS = {
+    "GK": "POR", "RB": "LD", "RCB": "DFC", "CB": "DFC", "LCB": "DFC", "LB": "LI",
+    "RWB": "CAD", "LWB": "CAI", "DM": "MCD", "RDM": "MCD", "LDM": "MCD",
+    "RCM": "MC", "LCM": "MC", "RM": "ED", "LM": "EI", "AM": "MP",
+    "RW": "ED", "LW": "EI", "ST": "DC",
 }

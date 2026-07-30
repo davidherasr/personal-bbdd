@@ -1,1 +1,1 @@
-match_id,match_date,competition_id,home_team_id,away_team_id,season,context,score_home,score_away,analyzed,created_at
+match_id,match_date,competition_id,home_team_id,away_team_id,season,context,score_home,score_away,analyzed,home_formation,away_formation,created_at
