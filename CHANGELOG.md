@@ -1,5 +1,4 @@
 # Changelog
-
 ## v1.0
 
 - Integración completa de la lógica útil de `BBDD Personal 2026`.
