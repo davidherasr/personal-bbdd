@@ -1,4 +1,4 @@
-# Scouting Hub v1.0
+# Scouting Hub v1.1
 
 Aplicación Streamlit de scouting personal basada en un flujo simple: **partido → minutos/nota/MVP → ranking**.
 
@@ -11,7 +11,7 @@ streamlit run streamlit_app.py
 
 En Streamlit Cloud, el archivo principal es `streamlit_app.py`.
 
-## Qué aporta v1.0
+## Qué aporta v1.1
 
 - Mesa para puntuar un once y suplentes desde una sola tabla.
 - Precarga de datos al volver a editar un partido.

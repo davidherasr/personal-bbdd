@@ -1,6 +1,6 @@
 # Integración de BBDD Personal 2026
 
-La v1.0 conserva la lógica útil del Excel sin obligar a mantener fórmulas manuales.
+La v1.1 conserva la lógica útil del Excel sin obligar a mantener fórmulas manuales.
 
 ## Correspondencia
 

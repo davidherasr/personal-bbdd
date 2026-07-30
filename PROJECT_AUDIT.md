@@ -1,4 +1,4 @@
-# Auditoría v1.0
+# Auditoría v1.1
 
 - Base inicial: diez CSV con cabeceras y cero filas.
 - Flujo diario principal: crear partido y registrar tabla jugador/minutos/nota/MVP.

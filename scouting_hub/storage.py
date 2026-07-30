@@ -189,7 +189,7 @@ def backup_zip_bytes() -> bytes:
             path = table_path(table)
             zf.writestr(f"data/{table}.csv", path.read_bytes())
         zf.writestr("data/settings.json", SETTINGS_PATH.read_bytes())
-        zf.writestr("manifest.json", json.dumps({"version": "1.0", "created_at": now_str(), "tables": list(SCHEMAS)}, ensure_ascii=False, indent=2))
+        zf.writestr("manifest.json", json.dumps({"version": "1.1", "created_at": now_str(), "tables": list(SCHEMAS)}, ensure_ascii=False, indent=2))
     return buffer.getvalue()
 
 

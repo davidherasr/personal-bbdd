@@ -1,4 +1,4 @@
-# Método de scoring v1.0
+# Método de scoring v1.1
 
 ## Capa 1 — Score Heras (rendimiento)
 

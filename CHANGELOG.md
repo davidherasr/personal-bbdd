@@ -1,4 +1,11 @@
 # Changelog
+
+## v1.1
+
+- Actualización completa de textos y metadatos visibles a la versión 1.1.
+- El título de la aplicación, documentación y nombres de backup muestran v1.1.
+- Mantiene el flujo partido → minutos/nota/MVP → ranking y los CSV iniciales vacíos.
+
 ## v1.0
 
 - Integración completa de la lógica útil de `BBDD Personal 2026`.

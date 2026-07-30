@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-APP_TITLE = "Scouting Hub v1.0"
+APP_TITLE = "Scouting Hub v1.1"
 APP_SUBTITLE = "Partido → nota → ranking, con la sencillez del Excel"
 
 POSITIONS = ["POR", "LD", "DFC", "LI", "CAD", "CAI", "MCD", "MC", "MP", "ED", "EI", "SD", "DC"]

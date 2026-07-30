@@ -1404,8 +1404,8 @@ def page_database() -> None:
 def page_import_export() -> None:
     hero("Importar, exportar y reiniciar", "La base empieza vacía. Exporta un ZIP al terminar cada sesión importante y podrás restaurarlo más adelante.", "Backup", "Portabilidad")
     c1, c2, c3 = st.columns(3)
-    c1.download_button("Backup ZIP", backup_zip_bytes(), file_name="scouting_hub_v10_backup.zip", mime="application/zip", use_container_width=True)
-    c2.download_button("Excel técnico", excel_backup_bytes(), file_name="scouting_hub_v10_raw.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    c1.download_button("Backup ZIP", backup_zip_bytes(), file_name="scouting_hub_v11_backup.zip", mime="application/zip", use_container_width=True)
+    c2.download_button("Excel técnico", excel_backup_bytes(), file_name="scouting_hub_v11_raw.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
     c3.download_button("Excel estilo BBDD", excel_model_bytes(), file_name="BBDD_Personal_Scouting_Hub.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, help="Incluye Hechos_Stats, Dim_Jugadores, Dim_Equipos e His_Rank, además de las tablas técnicas.")
     st.subheader("Plantillas CSV vacías")
     columns = st.columns(3)
