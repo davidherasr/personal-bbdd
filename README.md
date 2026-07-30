@@ -1,44 +1,54 @@
-# Scouting Hub v0.7
+# Scouting Hub v0.8
 
-Aplicación Streamlit para construir una base propia de scouting: jugadores, equipos, partidos, observaciones, importación masiva, duplicados, análisis, rankings y backup.
+Aplicación Streamlit para construir una base propia de scouting desde cero.
 
-## Novedades v0.7
+## Qué cambia en esta versión
 
-- Página nueva **Rankings**.
-- Motor de scoring separado en **nivel observado**, **potencial**, **encaje**, **confianza**, **urgencia** y **prioridad final**.
-- Prioridad **B+** para jugadores con señal alta pero poca evidencia.
-- Ranking por prioridad, nivel, potencial, encaje, confianza, jugadores que necesitan segunda observación y alertas.
-- Ficha de jugador con desglose visual del ranking.
-- Campos nuevos: rol principal/secundario, encaje táctico, necesidad posicional, tipo de visionado, nivel rival, dificultad, fiabilidad y tendencia.
-- Comparador actualizado con el nuevo motor de scoring.
-- Importador CSV actualizado para aceptar roles, encaje y necesidad posicional.
-- Mantiene el dataset inicial, importador masivo, cobertura de datos y backup de v0.6.
+- Dataset completamente vacío: todos los CSV contienen solo cabeceras.
+- Proyecto modular (`scouting_hub/`) en lugar de un único archivo monolítico.
+- Navegación agrupada por trabajo diario, análisis y administración.
+- Ranking por rol con criterios específicos.
+- Radar comparativo en SVG puro: no necesita matplotlib ni Plotly.
+- Percentiles, comparador y distribución por rol.
+- Búsqueda de jugadores similares por perfil.
+- Constructor de alineaciones y shortlists contextuales.
+- Motor de confianza basado en muestra, minutos, fiabilidad, diversidad, completitud y consistencia.
+- Ajuste del score hacia 50 cuando hay poca evidencia.
+- Compatibilidad básica con backups de versiones anteriores.
+- Escrituras atómicas de CSV y snapshot automático antes de restaurar o borrar.
 
-## Ejecutar local
+## Despliegue en Streamlit Community Cloud
+
+1. Descomprime el ZIP.
+2. Sube todo el contenido a la raíz del repositorio.
+3. Selecciona `streamlit_app.py` como archivo principal.
+4. Asegúrate de subir las carpetas `scouting_hub/`, `data/`, `templates/` y `.streamlit/`.
+
+## Ejecución local
 
 ```bash
-pip install -r requirements.txt
-streamlit run streamlit_app.py
+python -m pip install -r requirements.txt
+python -m streamlit run streamlit_app.py
 ```
 
-## Streamlit Cloud
+## Primer uso
 
-Main file path:
+1. Entra en **Alta rápida**.
+2. Crea país, competición y equipo.
+3. Añade la plantilla o el primer jugador.
+4. Crea un partido.
+5. Registra una observación rápida.
+6. Cuando el perfil lo merezca, completa una evaluación específica de rol.
+7. Revisa **Rankings** y **Laboratorio de roles**.
+8. Descarga un backup ZIP.
 
-```txt
-streamlit_app.py
+## Persistencia
+
+Los CSV locales de Streamlit Community Cloud no deben considerarse almacenamiento permanente. Descarga backups con frecuencia. La app crea snapshots locales antes de restaurar o reiniciar, pero esos snapshots también dependen del almacenamiento del despliegue.
+
+## Comprobación del proyecto
+
+```bash
+python validate_project.py
+python -m unittest discover -s tests
 ```
-
-Sube también la carpeta `data/`.
-
-## Flujo recomendado
-
-1. Entra en **Importador masivo** para cargar equipos, partidos o jugadores por CSV.
-2. Usa **Añadir / puntuar jugador** para añadir observaciones con fiabilidad, tendencia y contexto.
-3. Revisa **Rankings** para decidir quién necesita segunda observación, informe largo o descarte.
-4. Entra en **Jugadores** para ver la ficha individual y el desglose completo.
-5. Descarga siempre backup ZIP o Excel al terminar.
-
-## Aviso de datos
-
-La app trae datos semilla para arrancar. No son una certificación oficial completa de plantillas 2025/26. Para plantillas completas y actualizadas, usa el importador CSV con fuentes fiables y corrige desde la propia app.

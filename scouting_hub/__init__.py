@@ -1,0 +1,1 @@
+"""Scouting Hub application package."""
